@@ -15,4 +15,10 @@
     <ProjectReference Include="..\Shared\MoysIQPlatform.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Services\TestService\" />
+    <Folder Include="Services\StudentService\" />
+    <Folder Include="Services\QuestionService\" />
+  </ItemGroup>
+
 </Project>

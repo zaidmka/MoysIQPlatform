@@ -1,22 +1,22 @@
-﻿using MoysIQPlatform.Shared.Models.Questions;
-using MoysIQPlatform.Shared.Models.Accounts;
+﻿using MoysIQPlatform.Shared.Models.Accounts;
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace MoysIQPlatform.Shared.Models.Questions;
 
 public class Question
 {
+	[Key]
 	public int Id { get; set; }
-	public string Text { get; set; }
-	public string Type { get; set; } // "MCQ", "Text"
+	public string Text { get; set; } = string.Empty;
+	public string Type { get; set; } = string.Empty; // "MCQ", "Text"
 	public double Weight { get; set; }
-	public bool IsMandatory { get; set; }
+	public bool IsMandatory { get; set; } = false;
 	public DateTime CreatedDate { get; set; }
 
-	public int CreatedByEmployeeId { get; set; }                 // Foreign Key
+	public int CreatedByEmployeeId { get; set; }
 
-	[JsonIgnore]                                                 // ← To avoid circular loop
-	public EmployeeProfile Employee { get; set; } = default!;    // Navigation Property
+	public Employee Employee { get; set; } = default!;
 
-	public List<AnswerOption> Options { get; set; } = new();
+	public List<AnswerOption> Options { get; set; } = new(); // like to answers
 }
