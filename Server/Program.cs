@@ -137,9 +137,9 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-	app.UseExceptionHandler("/Error");
-	app.UseHsts();
+	app.UseDeveloperExceptionPage();
 }
+
 
 app.UseHttpsRedirection();
 app.UseResponseCompression();
