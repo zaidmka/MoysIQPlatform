@@ -134,10 +134,15 @@ if (app.Environment.IsDevelopment())
 	app.UseWebAssemblyDebugging();
 	app.UseSwagger();
 	app.UseSwaggerUI();
+	app.UseDeveloperExceptionPage(); // ✅ خطأ داخلي يظهر بوضوح فقط وقت التطوير
 }
 else
 {
-	app.UseDeveloperExceptionPage();
+	app.UseSwagger();       // ✅ تفعيل Swagger حتى بـ Production (لو تريدها)
+	app.UseSwaggerUI();     // ✅ نفس الشي
+	app.UseDeveloperExceptionPage(); // ❌ بس مؤقتاً للديبَغ!
+									 // الأفضل لاحقاً تستبدله بـ:
+									 // app.UseExceptionHandler("/error");
 }
 
 
