@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MoysIQPlatform.Server.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20250618193220_init")]
+    [Migration("20250620163025_init")]
     partial class init
     {
         /// <inheritdoc />
@@ -33,6 +33,10 @@ namespace MoysIQPlatform.Server.Migrations
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("createdat");
 
                     b.Property<string>("Department")
                         .IsRequired()
@@ -58,15 +62,10 @@ namespace MoysIQPlatform.Server.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("isapproved");
 
-                    b.Property<byte[]>("PasswordHash")
+                    b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasColumnType("bytea")
+                        .HasColumnType("text")
                         .HasColumnName("passwordhash");
-
-                    b.Property<byte[]>("PasswordSalt")
-                        .IsRequired()
-                        .HasColumnType("bytea")
-                        .HasColumnName("passwordsalt");
 
                     b.Property<string>("PhoneNumber")
                         .IsRequired()
@@ -86,6 +85,58 @@ namespace MoysIQPlatform.Server.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("employees");
+                });
+
+            modelBuilder.Entity("MoysIQPlatform.Shared.Models.Accounts.Student", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("createdat");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("email");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("fullname");
+
+                    b.Property<string>("Gender")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("gender");
+
+                    b.Property<string>("Grade")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("grade");
+
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("boolean")
+                        .HasColumnName("isapproved");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("passwordhash");
+
+                    b.Property<string>("SchoolName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("schoolname");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("students");
                 });
 
             modelBuilder.Entity("MoysIQPlatform.Shared.Models.Questions.AnswerOption", b =>
@@ -159,6 +210,69 @@ namespace MoysIQPlatform.Server.Migrations
                     b.ToTable("questions");
                 });
 
+            modelBuilder.Entity("MoysIQPlatform.Shared.Models.Tests.Test", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CreatedByEmployeeId")
+                        .HasColumnType("integer")
+                        .HasColumnName("createdbyemployeeid");
+
+                    b.Property<DateTime>("EndTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("endtime");
+
+                    b.Property<DateTime>("StartTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("starttime");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("title");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByEmployeeId");
+
+                    b.ToTable("tests");
+                });
+
+            modelBuilder.Entity("MoysIQPlatform.Shared.Models.Tests.TestQuestion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsMandatory")
+                        .HasColumnType("boolean")
+                        .HasColumnName("ismandatory");
+
+                    b.Property<int>("QuestionId")
+                        .HasColumnType("integer")
+                        .HasColumnName("questionid");
+
+                    b.Property<int>("TestId")
+                        .HasColumnType("integer")
+                        .HasColumnName("testid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuestionId");
+
+                    b.HasIndex("TestId");
+
+                    b.ToTable("testquestions");
+                });
+
             modelBuilder.Entity("MoysIQPlatform.Shared.Models.Questions.AnswerOption", b =>
                 {
                     b.HasOne("MoysIQPlatform.Shared.Models.Questions.Question", "Question")
@@ -181,6 +295,36 @@ namespace MoysIQPlatform.Server.Migrations
                     b.Navigation("Employee");
                 });
 
+            modelBuilder.Entity("MoysIQPlatform.Shared.Models.Tests.Test", b =>
+                {
+                    b.HasOne("MoysIQPlatform.Shared.Models.Accounts.Employee", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+                });
+
+            modelBuilder.Entity("MoysIQPlatform.Shared.Models.Tests.TestQuestion", b =>
+                {
+                    b.HasOne("MoysIQPlatform.Shared.Models.Questions.Question", "Question")
+                        .WithMany()
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MoysIQPlatform.Shared.Models.Tests.Test", "Test")
+                        .WithMany("TestQuestions")
+                        .HasForeignKey("TestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Question");
+
+                    b.Navigation("Test");
+                });
+
             modelBuilder.Entity("MoysIQPlatform.Shared.Models.Accounts.Employee", b =>
                 {
                     b.Navigation("Questions");
@@ -189,6 +333,11 @@ namespace MoysIQPlatform.Server.Migrations
             modelBuilder.Entity("MoysIQPlatform.Shared.Models.Questions.Question", b =>
                 {
                     b.Navigation("Options");
+                });
+
+            modelBuilder.Entity("MoysIQPlatform.Shared.Models.Tests.Test", b =>
+                {
+                    b.Navigation("TestQuestions");
                 });
 #pragma warning restore 612, 618
         }

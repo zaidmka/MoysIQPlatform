@@ -10,9 +10,13 @@ namespace MoysIQPlatform.Server.Data
 		public DataContext(DbContextOptions<DataContext> options) : base(options) { }
 
 		public DbSet<Employee> Employees { get; set; }
-		//public DbSet<StudentProfile> Students { get; set; }
+		public DbSet<Student> Students { get; set; }
 		public DbSet<Question> Questions { get; set; }
 		public DbSet<AnswerOption> AnswerOptions { get; set; }
+		public DbSet<Test> Tests { get; set; }
+		public DbSet<TestQuestion> TestQuestions { get; set; }
+		public DbSet<StudentAnswer> StudentAnswers { get; set; }
+
 		//public DbSet<Test> Tests { get; set; }
 		//public DbSet<StudentTest> StudentTests { get; set; }
 		//public DbSet<StudentAnswer> StudentAnswers { get; set; }
@@ -41,7 +45,36 @@ namespace MoysIQPlatform.Server.Data
 				.HasForeignKey(a => a.QuestionId)
 				.OnDelete(DeleteBehavior.Cascade);
 
-			
+			modelBuilder.Entity<Test>()
+				.HasOne(t => t.CreatedBy)
+				.WithMany()
+				.HasForeignKey(t => t.CreatedByEmployeeId)
+				.OnDelete(DeleteBehavior.Restrict);
+
+			modelBuilder.Entity<StudentAnswer>()
+				.HasOne(sa => sa.Student)
+				.WithMany()
+				.HasForeignKey(sa => sa.StudentId)
+				.OnDelete(DeleteBehavior.Restrict);
+
+			modelBuilder.Entity<StudentAnswer>()
+				.HasOne(sa => sa.Test)
+				.WithMany()
+				.HasForeignKey(sa => sa.TestId)
+				.OnDelete(DeleteBehavior.Restrict);
+
+			modelBuilder.Entity<StudentAnswer>()
+				.HasOne(sa => sa.Question)
+				.WithMany()
+				.HasForeignKey(sa => sa.QuestionId)
+				.OnDelete(DeleteBehavior.Restrict);
+
+			modelBuilder.Entity<StudentAnswer>()
+				.HasOne(sa => sa.AnswerOption)
+				.WithMany()
+				.HasForeignKey(sa => sa.AnswerOptionId)
+				.OnDelete(DeleteBehavior.SetNull);
+
 		}
 	}
 }

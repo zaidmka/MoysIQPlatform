@@ -1,0 +1,103 @@
+﻿@page "/create-test"
+@inject ITestService TestService
+@inject NavigationManager Nav
+@using MoysIQPlatform.Shared.Models.Tests
+@using MudBlazor
+
+
+<MudPaper Class="pa-6 mx-auto mt-6" MaxWidth="500px" Elevation="4">
+    <MudText Typo="Typo.h5" Class="mb-4">📅 Create New Test</MudText>
+
+    <MudTextField Label="Test Title" @bind-Value="newTest.Title" Required="true" />
+
+    <MudDivider Class="my-3" />
+
+    <MudText Typo="Typo.subtitle1">Start Date & Time</MudText>
+    <MudDatePicker Label="Start Date" @bind-Date="startDate" Required="true" />
+    <MudTimePicker Label="Start Time" @bind-Time="startTime" AmPm="true" Required="true" />
+
+    <MudDivider Class="my-3" />
+
+    <MudText Typo="Typo.subtitle1">End Date & Time</MudText>
+    <MudDatePicker Label="End Date" @bind-Date="endDate" Required="true" />
+    <MudTimePicker Label="End Time" @bind-Time="endTime" AmPm="true" Required="true" />
+
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4"
+               OnClick="CreateTest" Disabled="@isSaving" FullWidth="true">
+        <span class="d-flex align-items-center">
+            <i class="fas @(isSaving ? "fa-spinner fa-spin" : "fa-plus") me-2"></i>
+            @(isSaving ? "Saving..." : "Create Test")
+        </span>
+    </MudButton>
+
+    @if (showSuccessAlert)
+    {
+        <MudAlert Severity="Severity.Success" Class="mt-4" Dense="true" Elevation="2">
+            ✅ Test created successfully! ID: @createdTestId
+        </MudAlert>
+    }
+</MudPaper>
+
+@code {
+    private CreateTestDto newTest = new();
+
+    private DateTime? startDate = DateTime.Today;
+    private TimeSpan? startTime = TimeSpan.FromHours(9);
+
+    private DateTime? endDate = DateTime.Today;
+    private TimeSpan? endTime = TimeSpan.FromHours(10);
+
+    private bool isSaving = false;
+    private bool showSuccessAlert = false;
+    private int createdTestId;
+
+    private async Task CreateTest()
+    {
+        if (startDate == null || startTime == null || endDate == null || endTime == null)
+        {
+            Console.WriteLine("⚠️ Please select all date and time values.");
+            return;
+        }
+
+        newTest.StartTime = new DateTime(
+                            startDate.Value.Year,
+                            startDate.Value.Month,
+                            startDate.Value.Day,
+                            startTime.Value.Hours,
+                            startTime.Value.Minutes,
+                            0,
+                            DateTimeKind.Local
+                        ).ToUniversalTime();
+
+        newTest.EndTime = new DateTime(
+                            endDate.Value.Year,
+                            endDate.Value.Month,
+                            endDate.Value.Day,
+                            endTime.Value.Hours,
+                            endTime.Value.Minutes,
+                            0,
+                            DateTimeKind.Local
+                        ).ToUniversalTime();
+
+        isSaving = true;
+        showSuccessAlert = false;
+
+
+
+        try
+        {
+            createdTestId = await TestService.CreateTestAsync(newTest);
+            showSuccessAlert = true;
+            await Task.Delay(500); // Simulate a short delay for UX
+            Nav.NavigateTo($"/select-questions/{createdTestId}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error: " + ex.Message);
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

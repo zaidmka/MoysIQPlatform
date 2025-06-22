@@ -1,0 +1,179 @@
+﻿@page "/questions"
+@inject IQuestionService QuestionService
+@using MoysIQPlatform.Shared.Models.Questions
+@using MoysIQPlatform.Client.Shared
+
+<h3>Question Management</h3>
+
+<CurrentUserState OnStateReady="HandleUserState" />
+<p class="text-muted"><strong>@message</strong></p>
+
+@if (userState is not null && userState.IsAuthenticated)
+{
+	<p class="text-muted">👤 Welcome, <strong>@userState.FullName</strong> (@userState.Role)</p>
+}
+@if (userState is null)
+{
+	<p><em>Loading user info...</em></p>
+}
+else if (!string.IsNullOrWhiteSpace(userState.ErrorMessage))
+{
+	<p class="text-danger">⚠️ @userState.ErrorMessage</p>
+}
+else if (!userState.IsApproved || !userState.HasRole("Editor"))
+{
+	<p class="text-warning">⛔ You are not authorized to access this page.</p>
+}
+
+else
+{
+	<h5>Add New Question</h5>
+	<EditForm Model="newQuestion" OnValidSubmit="AddQuestion">
+		<DataAnnotationsValidator />
+		<ValidationSummary />
+
+		<InputText @bind-Value="newQuestion.Text" class="form-control mb-2" placeholder="Question Text" />
+		<InputText @bind-Value="newQuestion.Type" class="form-control mb-2" placeholder="Type (MCQ/Text)" />
+		<InputNumber @bind-Value="newQuestion.Weight" class="form-control mb-2" />
+		<InputCheckbox @bind-Value="newQuestion.IsMandatory" class="form-check-input" /> Mandatory
+
+		<h6>Options:</h6>
+		@foreach (var option in newQuestion.Options.ToList())
+		{
+			<div class="mb-2 d-flex gap-2 align-items-center">
+				<InputText @bind-Value="option.Text" class="form-control" placeholder="Option Text" />
+				<label class="form-check-label">
+					<InputCheckbox @bind-Value="option.IsCorrect" class="form-check-input" />
+					Is Correct
+				</label>
+				<button type="button" class="btn btn-sm btn-danger" @onclick="() => RemoveOption(option)">❌</button>
+			</div>
+		}
+		<button class="btn btn-sm btn-secondary" @onclick="AddOption" type="button">Add Option</button>
+		<br /><br />
+		<button type="submit" class="btn btn-primary">Save Question</button>
+	</EditForm>
+
+	<hr />
+
+	<h5>All Questions</h5>
+	@if (questions == null)
+	{
+		<p><em>Loading questions...</em></p>
+	}
+	else
+	{
+		<table class="table table-bordered mt-3">
+			<thead>
+				<tr>
+					<th>Text</th>
+					<th>Type</th>
+					<th>Weight</th>
+					<th>Created By</th>
+				</tr>
+			</thead>
+			<tbody>
+				@foreach (var q in questions)
+				{
+					<tr>
+						<td>@q.Text</td>
+						<td>@q.Type</td>
+						<td>@q.Weight</td>
+						<td>@q.CreatedBy</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	}
+}
+
+@code {
+	private UserAuthState? userState;
+	private List<QuestionWithEmployeeDto>? questions;
+    private string message = string.Empty;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await LoadQuestions();
+
+	}
+
+
+	private QuestionCreateDto newQuestion = new()
+	{
+		Type = "MCQ",
+		IsMandatory = false,
+		Options = new List<AnswerOptionDto>
+		{
+			new() { Text = "", IsCorrect = false }
+		}
+	};
+
+	private async void HandleUserState(UserAuthState state)
+	{
+		userState = state;
+
+		if (state.Status == "active_employee")
+		{
+			var result = await QuestionService.GetAllQuestions();
+			if (result.Success)
+				questions = result.Data;
+		}
+
+		StateHasChanged(); // Refresh UI after state is set
+	}
+
+	private async Task AddQuestion()
+	{
+		// Validate: all options must have text
+		if (newQuestion.Options.Any(o => string.IsNullOrWhiteSpace(o.Text)))
+		{
+			message = "❗ All options must have text.";
+			return;
+		}
+
+		// Validate: only one correct option
+		var correctCount = newQuestion.Options.Count(o => o.IsCorrect);
+		if (correctCount != 1)
+		{
+			message = "❗ Exactly one option must be marked as correct.";
+			return;
+		}
+
+		// Call the service to save
+		var result = await QuestionService.CreateQuestion(newQuestion);
+
+		if (result.Success)
+		{
+			await LoadQuestions();
+			newQuestion = new QuestionCreateDto
+			{
+				Type = "MCQ",
+				IsMandatory = false,
+				Options = new() { new AnswerOptionDto() }
+			};
+			message = "✅ Question saved successfully.";
+		}
+		else
+		{
+			message = $"❌ Failed to save: {result.Message}";
+		}
+	}
+
+	private void RemoveOption(AnswerOptionDto option)
+	{
+		if (newQuestion.Options.Count > 1)
+			newQuestion.Options.Remove(option);
+	}
+	private async Task LoadQuestions()
+	{
+		var result = await QuestionService.GetAllQuestions();
+		if (result.Success)
+			questions = result.Data;
+	}
+
+	private void AddOption()
+	{
+		newQuestion.Options.Add(new AnswerOptionDto());
+	}
+}

@@ -1,0 +1,146 @@
+﻿@page "/select-questions/{TestId:int}"
+@inject ITestService TestService
+@inject IQuestionService QuestionService
+@using MoysIQPlatform.Shared.Models.Tests
+@using MoysIQPlatform.Shared.Models.Questions
+
+<h3 class="mt-3 mb-2 text-primary">📝 Select Questions for Test</h3>
+<h5 class="mb-4 text-secondary">ID: <strong>@TestId</strong> | <strong>@testName</strong> | <small class="text-muted">@testDescription</small></h5>
+
+@if (_questions is null)
+{
+    <div class="alert alert-info">
+        <i class="fas fa-spinner fa-spin"></i> Loading questions...
+    </div>
+}
+else
+{
+    <table class="table table-hover table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>Select</th>
+                <th>Text</th>
+                <th>Type</th>
+                <th>Mandatory</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var q in _questions)
+            {
+                <tr class="@((q.IsSelected ? "table-success" : ""))">
+                    <td class="text-center">
+                        <input type="checkbox" @bind="q.IsSelected" />
+                        @if (q.IsSelected)
+                        {
+                            <span class="ms-1 text-success"><i class="fas fa-check-circle"></i></span>
+                        }
+                    </td>
+                    <td>@q.Text</td>
+                    <td>
+                        <span class="badge bg-info">@q.Type</span>
+                    </td>
+                    <td class="text-center">
+                        <input type="checkbox" @bind="q.IsMandatory" />
+                        @if (q.IsMandatory)
+                        {
+                            <span class="ms-1 text-danger"><i class="fas fa-exclamation-circle"></i></span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    @if (showSuccessAlert)
+    {
+        <MudAlert Severity="Severity.Success" ContentAlignment="HorizontalAlignment.Center" Elevation="1">
+            Questions saved successfully.
+        </MudAlert>
+    }
+    <button class="btn btn-success mt-3" @onclick="AttachQuestionsToTest" disabled="@isSaving">
+        <span>
+            <i class="fas @(isSaving ? "fa-spinner fa-spin" : "fa-paperclip")"></i>
+            @(isSaving ? " Saving..." : " Attach Selected Questions")
+        </span>
+    </button>
+
+
+}
+
+@code {
+    [Parameter]
+    public int TestId { get; set; }
+    private string testName = string.Empty;
+    private string testDescription = string.Empty;
+    private List<QuestionSelectionWithInfo>? _questions;
+    private bool isSaving = false;
+    private bool showSuccessAlert = false;
+    private string message = string.Empty;
+    protected override async Task OnInitializedAsync()
+    {
+        var attached = await TestService.GetQuestionsForTestAsync(TestId);
+        var attachedIds = attached.Select(q => q.QuestionId).ToHashSet();
+        var testDetails = await TestService.GetTestByIdAsync(TestId);
+        if (testDetails != null)
+        {
+            testName = testDetails.Title;
+            testDescription = testDetails.StartTime + " - " + testDetails.EndTime;
+        }
+
+        var all = await QuestionService.GetAllQuestions();
+        _questions = all.Data?.Select(q => new QuestionSelectionWithInfo
+        {
+            QuestionId = q.Id,
+            Text = q.Text,
+            Type = q.Type,
+            IsSelected = attachedIds.Contains(q.Id),
+            IsMandatory = attached.FirstOrDefault(x => x.QuestionId == q.Id)?.IsMandatory ?? false
+        }).ToList();
+    }
+
+    private async Task AttachQuestionsToTest()
+    {
+        if (_questions is null) return;
+
+        isSaving = true;
+        showSuccessAlert = false;
+        var selected = _questions
+            .Where(q => q.IsSelected)
+            .Select(q => new QuestionSelection
+            {
+                QuestionId = q.QuestionId,
+                IsSelected = q.IsSelected,
+                IsMandatory = q.IsMandatory
+            })
+            .ToList();
+
+        if (selected.Count == 0)
+        {
+            isSaving = false;
+            return;
+        }
+
+        var dto = new AttachQuestionsDto
+        {
+            TestId = TestId,
+            Questions = selected
+        };
+
+        await TestService.AttachQuestionsAsync(dto);
+
+        showSuccessAlert = true;
+        StateHasChanged();
+
+        await Task.Delay(1000);
+        isSaving = false;
+
+        showSuccessAlert = false;
+        StateHasChanged();
+    }
+
+
+    public class QuestionSelectionWithInfo : QuestionSelection
+    {
+        public string Text { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+    }
+}

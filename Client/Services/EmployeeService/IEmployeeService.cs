@@ -5,8 +5,8 @@ namespace MoysIQPlatform.Client.Services.EmployeeService
 {
 	public interface IEmployeeService
 	{
-		Task<ServiceResponse<int>> EmployeeRegister(EmployeeRegister request);
-		Task<ServiceResponse<string>> EmployeeLogin(EmployeeLogin request);
-		Task<ServiceResponse<bool>> ChangePassword(EmployeeChangePassword request);
+		Task<ServiceResponse<UserDto>> Register(EmployeeRegister request);
+		Task<ServiceResponse<string>> Login(EmployeeLogin request);
+		Task Logout();
 	}
 }

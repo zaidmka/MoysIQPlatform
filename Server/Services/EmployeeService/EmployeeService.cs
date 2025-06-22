@@ -22,11 +22,11 @@ namespace MoysIQPlatform.Server.Services.EmployeeService
 		}
 
 		// Employee registration
-		public async Task<ServiceResponse<int>> EmployeeRegister(Employee employee, string password)
+		public async Task<ServiceResponse<UserDto>> EmployeeRegister(Employee employee, string password)
 		{
 			if (await EmployeeExists(employee.Email))
 			{
-				return new ServiceResponse<int>
+				return new ServiceResponse<UserDto>
 				{
 					Success = false,
 					Message = "Employee already exists!"
@@ -40,11 +40,17 @@ namespace MoysIQPlatform.Server.Services.EmployeeService
 			_dataContext.Employees.Add(employee);
 			await _dataContext.SaveChangesAsync();
 
-			return new ServiceResponse<int>
+			return new ServiceResponse<UserDto>
 			{
 				Success = true,
 				Message = "Employee registered successfully.",
-				Data = employee.Id
+				Data = new UserDto
+				{
+					Id = employee.Id,
+					Email = employee.Email,
+					FullName = employee.FullName,
+					Role = employee.Role
+				}
 			};
 		}
 
@@ -99,7 +105,9 @@ namespace MoysIQPlatform.Server.Services.EmployeeService
 				new Claim(ClaimTypes.NameIdentifier, employee.Id.ToString()),
 				new Claim(ClaimTypes.Email, employee.Email),
 				new Claim(ClaimTypes.Name, employee.FullName),
-				new Claim(ClaimTypes.Role, employee.Role)
+				new Claim(ClaimTypes.Role, employee.Role),
+				new Claim("is_approved", employee.IsApproved.ToString().ToLower()) // ✅ custom claim
+
 			};
 
 			// Load JWT secrets from environment via IConfiguration
@@ -108,7 +116,7 @@ namespace MoysIQPlatform.Server.Services.EmployeeService
 			var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE")!;
 
 			var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
-			var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
+			var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512);
 
 			var token = new JwtSecurityToken(
 				issuer: issuer,

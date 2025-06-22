@@ -5,7 +5,7 @@ namespace MoysIQPlatform.Server.Services.EmployeeService
 {
 	public interface IEmployeeService
 	{
-		Task<ServiceResponse<int>> EmployeeRegister(Employee employee, string password);
+		Task<ServiceResponse<UserDto>> EmployeeRegister(Employee employee, string password);
 		Task<bool> EmployeeExists(string email);
 		Task<ServiceResponse<string>> Login(string email, string password);
 	}

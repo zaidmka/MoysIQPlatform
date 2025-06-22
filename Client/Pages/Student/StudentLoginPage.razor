@@ -1,0 +1,47 @@
+﻿@page "/student-login"
+@using MoysIQPlatform.Shared.Models.Accounts
+
+@inject IStudentService StudentService
+@inject NavigationManager Nav
+
+<h3>🎓 Student Login</h3>
+
+<MudPaper Class="pa-6 mx-auto mt-6" MaxWidth="500px" Elevation="4">
+    <MudTextField Label="Email" @bind-Value="login.Email" Required="true" />
+    <MudTextField Label="Password" @bind-Value="login.Password" InputType="InputType.Password" Required="true" />
+
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-3" OnClick="LoginStudent" FullWidth="true">
+        <span class="d-flex align-items-center">
+            <i class="fas fa-sign-in-alt me-2"></i> Login
+        </span>
+    </MudButton>
+
+    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Class="mt-2" FullWidth="true" OnClick="@(() => Nav.NavigateTo("/student-register"))">
+        Don’t have an account? Register here
+    </MudButton>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Class="mt-3">@errorMessage</MudAlert>
+    }
+</MudPaper>
+
+@code {
+    private StudentLogin login = new();
+    private string? errorMessage;
+
+    private async Task LoginStudent()
+    {
+        errorMessage = null;
+
+        var result = await StudentService.Login(login);
+        if (result.Success)
+        {
+            Nav.NavigateTo("/");
+        }
+        else
+        {
+            errorMessage = result.Message ?? "Login failed.";
+        }
+    }
+}

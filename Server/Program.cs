@@ -1,18 +1,19 @@
 ﻿global using Microsoft.EntityFrameworkCore;
 global using Microsoft.Extensions.Configuration;
 global using Microsoft.Extensions.DependencyInjection;
-
+global using MoysIQPlatform.Server.Services.EmployeeService;
+global using MoysIQPlatform.Server.Services.QuestionsServices;
+global using MoysIQPlatform.Server.Services.StudentService;
 using AspNetCoreRateLimit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using MoysIQPlatform.Server.Data;
+using MoysIQPlatform.Server.Services.TestService;
 using Swashbuckle.AspNetCore.Filters;
 using System.Text;
-using MoysIQPlatform.Server.Data;
-using MoysIQPlatform.Server.Services.EmployeeService;
-using MoysIQPlatform.Server.Services.QuestionsServices;
 
 // ✅ Enable legacy encoding support (for older PDFs, etc.)
 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -52,8 +53,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 	});
 
 // ✅ App Services
+
+builder.Services.AddHttpContextAccessor(); // For accessing HTTP context in services
+
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IQuestionsServices, QuestionsServices>();
+builder.Services.AddScoped<IStudentService, StudentService>();
+builder.Services.AddScoped<ITestService, TestService>();
+
+
+
 
 // ✅ Rate Limiting
 builder.Services.AddMemoryCache();
@@ -64,17 +73,37 @@ builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>()
 // ✅ Swagger + JWT Support
 builder.Services.AddSwaggerGen(options =>
 {
-	options.SwaggerDoc("v1", new OpenApiInfo { Title = "MoysIQPlatform API", Version = "v1" });
-
-	options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
+	options.SwaggerDoc("v1", new OpenApiInfo
 	{
-		Description = "JWT Bearer - Example: Bearer {token}",
-		In = ParameterLocation.Header,
-		Name = "Authorization",
-		Type = SecuritySchemeType.ApiKey
+		Title = "MoysIQPlatform API",
+		Version = "v1"
 	});
 
-	options.OperationFilter<SecurityRequirementsOperationFilter>();
+	// important
+	options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+	{
+		Name = "Authorization",
+		Type = SecuritySchemeType.Http,
+		Scheme = "bearer",
+		BearerFormat = "JWT",
+		In = ParameterLocation.Header,
+		Description = "Enter 'Bearer' [space] and then your token"
+	});
+
+	options.AddSecurityRequirement(new OpenApiSecurityRequirement
+	{
+		{
+			new OpenApiSecurityScheme
+			{
+				Reference = new OpenApiReference
+				{
+					Type = ReferenceType.SecurityScheme,
+					Id = "Bearer"
+				}
+			},
+			Array.Empty<string>()
+		}
+	});
 });
 
 // ✅ UI & Compression
@@ -120,6 +149,12 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseIpRateLimiting(); // before authentication to limit requests
+app.Use(async (context, next) =>
+{
+	var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
+	Console.WriteLine($"🔍 Swagger Authorization Header: {authHeader}");
+	await next();
+});
 app.UseAuthentication();
 app.UseAuthorization();
 

@@ -1,0 +1,24 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthProvider
+
+@code {
+	[Parameter]
+	public EventCallback<UserAuthState> OnStateReady { get; set; }
+
+	protected override async Task OnInitializedAsync()
+	{
+		var authState = await AuthProvider.GetAuthenticationStateAsync();
+		var user = authState.User;
+
+		var state = new UserAuthState
+		{
+			IsAuthenticated = user.Identity?.IsAuthenticated ?? false,
+			Role = user.FindFirst(ClaimTypes.Role)?.Value ?? "",
+			IsApproved = user.FindFirst("is_approved")?.Value == "true",
+			FullName = user.FindFirst(ClaimTypes.Name)?.Value ?? ""
+		};
+
+		await OnStateReady.InvokeAsync(state);
+	}
+}

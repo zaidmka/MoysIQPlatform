@@ -33,7 +33,7 @@ namespace MoysIQPlatform.Server.Controllers
 		}
 
 		[HttpPost]
-		public async Task<ActionResult<ServiceResponse<Question>>> Create(QuestionCreateDto question)
+		public async Task<ActionResult<ServiceResponse<QuestionWithEmployeeDto>>> Create(QuestionCreateDto question)
 		{
 			var result = await _questionService.CreateQuestion(question);
 			return Ok(result);

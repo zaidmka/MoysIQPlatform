@@ -7,7 +7,6 @@
 		public double Weight { get; set; }
 		public bool IsMandatory { get; set; }
 		public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
-		public int CreatedByEmployeeId { get; set; }
 		public List<AnswerOptionDto> Options { get; set; } = new();
 	}
 

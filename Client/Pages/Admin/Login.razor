@@ -1,0 +1,38 @@
+﻿@page "/login"
+@using MoysIQPlatform.Shared.Models.Accounts
+@inject IEmployeeService EmployeeService
+@inject NavigationManager Nav
+
+<h3>Employee Login</h3>
+
+@if (!string.IsNullOrEmpty(Message))
+{
+	<div class="alert alert-danger">@Message</div>
+}
+
+<EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+	<DataAnnotationsValidator />
+	<ValidationSummary />
+
+	<InputText @bind-Value="loginModel.Email" class="form-control mb-2" placeholder="Email" />
+	<InputText @bind-Value="loginModel.Password" class="form-control mb-2" placeholder="Password" type="password" />
+	<button class="btn btn-primary" type="submit">Login</button>
+</EditForm>
+
+@code {
+	private EmployeeLogin loginModel = new();
+	private string? Message;
+
+	private async Task HandleLogin()
+	{
+		var result = await EmployeeService.Login(loginModel);
+
+		if (!result.Success)
+		{
+			Message = result.Message;
+			return;
+		}
+
+		Nav.NavigateTo("/");
+	}
+}

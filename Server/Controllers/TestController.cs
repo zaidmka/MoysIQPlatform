@@ -1,0 +1,112 @@
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using MoysIQPlatform.Server.Services.TestService;
+using MoysIQPlatform.Shared.Models.Tests;
+using System.Security.Claims;
+
+namespace MoysIQPlatform.Server.Controllers
+{
+	[Route("api/[controller]")]
+	[ApiController]
+	public class TestController : ControllerBase
+	{
+		private readonly ITestService _testService;
+
+		public TestController(ITestService testService)
+		{
+			_testService = testService;
+		}
+
+
+		[Authorize]
+		[HttpPost("create")]
+		public async Task<IActionResult> CreateTest([FromBody] CreateTestDto dto)
+		{
+			try
+			{
+				var employeeId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new Exception("Missing ID claim."));
+				var employeeRole = User.FindFirst(ClaimTypes.Role)?.Value ?? throw new Exception("Missing role claim.");
+
+				var allowedRoles = new[] { "Admin", "Editor" };
+				if (!allowedRoles.Any(r => employeeRole.Contains(r)))
+					return Forbid("⛔ You are not allowed to create tests.");
+
+				var newId = await _testService.CreateTestAsync(dto, employeeId, employeeRole);
+				return Ok(newId);
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ex.Message);
+			}
+		}
+
+		[Authorize]
+		[HttpPost("attach-questions")]
+		public async Task<IActionResult> AttachQuestions([FromBody] AttachQuestionsDto dto)
+		{
+			try
+			{
+				var employeeId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new Exception("Missing ID claim."));
+				var employeeRole = User.FindFirst(ClaimTypes.Role)?.Value ?? throw new Exception("Missing role claim.");
+
+				await _testService.AttachQuestionsAsync(dto, employeeId, employeeRole);
+				return Ok("Questions attached successfully.");
+			}
+			catch (UnauthorizedAccessException ex)
+			{
+				return Forbid(ex.Message);
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ex.Message);
+			}
+		}
+		[Authorize]
+		[HttpGet("available")]
+		public async Task<IActionResult> GetAvailableTests()
+		{
+			try
+			{
+				var tests = await _testService.GetAvailableTestsAsync();
+				return Ok(tests);
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ex.Message);
+			}
+		}
+		[Authorize]
+		[HttpGet("questions/{testId}")]
+		public async Task<IActionResult> GetQuestionsForTest(int testId)
+		{
+			try
+			{
+				var questions = await _testService.GetQuestionsForTestAsync(testId);
+				return Ok(questions);
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ex.Message);
+			}
+		}
+		[Authorize]
+		[HttpGet("{testId}")]
+		public async Task<IActionResult> GetTestById(int testId)
+		{
+			try
+			{
+				var employeeId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new Exception("Missing ID claim."));
+				var employeeRole = User.FindFirst(ClaimTypes.Role)?.Value ?? throw new Exception("Missing role claim.");
+				var test = await _testService.GetTestByIdAsync(testId, employeeId, employeeRole);
+				return Ok(test);
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ex.Message);
+			}
+		}
+
+
+	}
+}

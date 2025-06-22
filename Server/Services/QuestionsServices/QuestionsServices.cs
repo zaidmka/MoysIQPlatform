@@ -1,15 +1,21 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MoysIQPlatform.Server.Data;
+using MoysIQPlatform.Shared.Models;
+using MoysIQPlatform.Shared.Models.Accounts;
 using MoysIQPlatform.Shared.Models.Questions;
+using System.Security.Claims;
 
 namespace MoysIQPlatform.Server.Services.QuestionsServices
 {
 	public class QuestionsServices : IQuestionsServices
 	{
 		private readonly DataContext _context;
-		public QuestionsServices(DataContext context)
+		private readonly IHttpContextAccessor _httpContext;
+
+		public QuestionsServices(DataContext context, IHttpContextAccessor httpContext)
 		{
 			_context = context;
+			_httpContext = httpContext;
 		}
 
 		public async Task<ServiceResponse<List<QuestionWithEmployeeDto>>> GetAllQuestions()
@@ -27,7 +33,7 @@ namespace MoysIQPlatform.Server.Services.QuestionsServices
 				Weight = q.Weight,
 				IsMandatory = q.IsMandatory,
 				CreatedDate = q.CreatedDate,
-				CreatedBy = q.Employee.FullName, // أو q.Employee.Email
+				CreatedBy = q.Employee.FullName, //  q.Employee.Email
 				Options = q.Options
 			}).ToList();
 
@@ -47,10 +53,30 @@ namespace MoysIQPlatform.Server.Services.QuestionsServices
 			return new ServiceResponse<Question> { Data = question };
 		}
 
-		public async Task<ServiceResponse<Question>> CreateQuestion(QuestionCreateDto dto)
+		public async Task<ServiceResponse<QuestionWithEmployeeDto>> CreateQuestion(QuestionCreateDto dto)
 		{
 			try
 			{
+				var auth = await ValidateAuthUser();
+				if (!auth.IsValid)
+				{
+					return new ServiceResponse<QuestionWithEmployeeDto>
+					{
+						Success = false,
+						Message = auth.ErrorMessage
+					};
+				}
+				// 🛡️ Check role explicitly
+				if (!auth.Role.Split(',').Select(r => r.Trim()).Contains("Editor") &&
+					!auth.Role.Split(',').Select(r => r.Trim()).Contains("Admin")) // optionally allow admins too
+				{
+					return new ServiceResponse<QuestionWithEmployeeDto>
+					{
+						Success = false,
+						Message = "You are not authorized to create questions."
+					};
+				}
+
 				var question = new Question
 				{
 					Text = dto.Text,
@@ -58,35 +84,48 @@ namespace MoysIQPlatform.Server.Services.QuestionsServices
 					Weight = dto.Weight,
 					IsMandatory = dto.IsMandatory,
 					CreatedDate = dto.CreatedDate,
-					CreatedByEmployeeId = dto.CreatedByEmployeeId,
+					CreatedByEmployeeId = auth.UserId!.Value // ✅ from auth context
 				};
 
 				question.Options = dto.Options.Select(o => new AnswerOption
 				{
 					Text = o.Text,
 					IsCorrect = o.IsCorrect,
-					Question = question // real connection to the question
+					Question = question
 				}).ToList();
 
 				_context.Questions.Add(question);
 				await _context.SaveChangesAsync();
 
-				return new ServiceResponse<Question>
+				return new ServiceResponse<QuestionWithEmployeeDto>
 				{
-					Data = question,
+					Data = new QuestionWithEmployeeDto
+					{
+						Text = question.Text,
+						Type = question.Type,
+						Weight = question.Weight,
+						IsMandatory = question.IsMandatory,
+						CreatedDate = question.CreatedDate,
+						Options = question.Options.Select(o => new AnswerOption
+						{
+							Text = o.Text,
+							IsCorrect = o.IsCorrect
+						}).ToList()
+					},
 					Success = true,
 					Message = "Question created successfully."
 				};
 			}
 			catch (Exception ex)
 			{
-				return new ServiceResponse<Question>
+				return new ServiceResponse<QuestionWithEmployeeDto>
 				{
 					Success = false,
-					Message = ex.Message
+					Message = $"Error: {ex.Message}"
 				};
 			}
 		}
+
 
 
 		public async Task<ServiceResponse<bool>> UpdateQuestion(int id, Question question)
@@ -139,5 +178,51 @@ namespace MoysIQPlatform.Server.Services.QuestionsServices
 			await _context.SaveChangesAsync();
 			return new ServiceResponse<bool> { Data = true, Message = "Question deleted" };
 		}
+
+		private async Task<AuthUserContext> ValidateAuthUser()
+		{
+			var user = _httpContext.HttpContext?.User;
+
+			if (!(user.Identity?.IsAuthenticated ?? false))
+				return new AuthUserContext
+				{
+					IsValid = false,
+					ErrorMessage = "Not authenticated."
+				};
+
+			var role = user.FindFirst(ClaimTypes.Role)?.Value ?? "";
+			var idStr = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+			if (!int.TryParse(idStr, out var userId))
+				return new AuthUserContext
+				{
+					IsValid = false,
+					ErrorMessage = "Invalid user ID in token."
+				};
+
+			var employee = await _context.Employees.FirstOrDefaultAsync(e => e.Id == userId);
+			if (employee == null)
+				return new AuthUserContext
+				{
+					IsValid = false,
+					ErrorMessage = "Employee not found."
+				};
+
+			if (!employee.IsApproved)
+				return new AuthUserContext
+				{
+					IsValid = false,
+					ErrorMessage = "Employee is not approved yet."
+				};
+
+			return new AuthUserContext
+			{
+				IsValid = true,
+				UserId = userId,
+				Role = role,
+				EmployeeEntity = employee
+			};
+		}
+
 	}
 }
