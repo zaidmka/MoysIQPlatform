@@ -2,17 +2,19 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-# Copy solution and project file
+# Copy solution and all project files (Server, Client, Shared)
 COPY MoysIQPlatform.sln ./
 COPY Server/MoysIQPlatform.Server.csproj ./Server/
+COPY Client/MoysIQPlatform.Client.csproj ./Client/
+COPY Shared/MoysIQPlatform.Shared.csproj ./Shared/
 
 # Restore dependencies
 RUN dotnet restore
 
-# Copy the rest of the files
+# Copy the full source code
 COPY . .
 
-# Publish from Server folder
+# Publish
 WORKDIR /src/Server
 RUN dotnet publish -c Release -o /app/publish
 
