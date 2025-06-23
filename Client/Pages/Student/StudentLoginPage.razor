@@ -1,4 +1,4 @@
-﻿@page "/student-login"
+﻿@page "/login"
 @using MoysIQPlatform.Shared.Models.Accounts
 
 @inject IStudentService StudentService
@@ -16,8 +16,11 @@
         </span>
     </MudButton>
 
-    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Class="mt-2" FullWidth="true" OnClick="@(() => Nav.NavigateTo("/student-register"))">
+    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Class="mt-2" FullWidth="true" OnClick="@(() => Nav.NavigateTo("/register"))">
         Don’t have an account? Register here
+    </MudButton>
+    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Class="mt-2" FullWidth="true" OnClick="@(() => Nav.NavigateTo("/admin/logine"))">
+        Are you an employee? login here
     </MudButton>
 
     @if (!string.IsNullOrEmpty(errorMessage))

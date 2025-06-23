@@ -82,7 +82,9 @@ namespace MoysIQPlatform.Server.Services.StudentService
 				new Claim(ClaimTypes.NameIdentifier, student.Id.ToString()),
 				new Claim(ClaimTypes.Email, student.Email),
 				new Claim(ClaimTypes.Name, student.FullName),
-				new Claim(ClaimTypes.Role, "Student") // Fixed role
+				new Claim(ClaimTypes.Role, "Student"), // Fixed role
+				new Claim("is_approved", student.IsApproved.ToString().ToLower()) // ✅ custom claim
+
 			};
 
 			var secret = Environment.GetEnvironmentVariable("JWT_SECRET")!;
