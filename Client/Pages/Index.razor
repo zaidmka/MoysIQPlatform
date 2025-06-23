@@ -1,9 +1,56 @@
 ﻿@page "/"
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
-<PageTitle>Index</PageTitle>
 
-<h1>Hello, world!</h1>
 
-Welcome to your new app.
+<AuthorizeView>
+    <Authorized>
+        <CurrentUserState OnStateReady="HandleUserState" />
 
-<SurveyPrompt Title="How is Blazor working for you?" />
+        @if (userState is not null)
+        {
+            <div class="pa-4">
+                <MudText Typo="Typo.h6">👋 أهلاً، @userState.FullName</MudText>
+                <MudText Typo="Typo.subtitle1">📧 البريد الإلكتروني: @userState.Email</MudText>
+                <MudText Typo="Typo.subtitle1">📛 النوع: @(userState.Role)</MudText>
+                <MudText Typo="Typo.subtitle2">✅ حالة الاعتماد: @(userState.IsApproved)</MudText>
+            </div>
+        }
+        else
+        {
+            <p><em>جاري تحميل بيانات المستخدم...</em></p>
+        }
+
+    </Authorized>
+    <NotAuthorized>
+        <div class="center-content">
+            <img class="fade-in-out" src="/logo250.png" alt="Menu Icon" />
+            <h4 style="font-family:Cairo">
+                الرجاء تسجيل
+                <a href="login">الدخول  <MudIcon Icon="@Icons.Material.Filled.Login" Color="Color.Info" Size="Size.Medium" /> </a>
+                لغرض المحتوى
+            </h4>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+<div  dir="rtl">
+<MudPaper Class="pa-4 mt-4" Elevation="2">
+    <MudText Typo="Typo.h6">🧠 منصة MoysIQPlatform</MudText>
+    <MudText Typo="Typo.body1" Class="mt-2">
+        منصة إلكترونية تهدف إلى تنظيم اختبارات الذكاء وتحليل القدرات العقلية للطلبة ضمن بيئة آمنة وتفاعلية.
+    </MudText>
+    <MudText Typo="Typo.body1">
+        يتم إنشاء الاختبارات من قبل موظفين معتمدين، ويُتاح للطلبة المعتمدين فقط الدخول والمشاركة.
+    </MudText>
+</MudPaper>
+</div>
+@code{
+    private UserAuthState? userState;
+
+    private Task HandleUserState(UserAuthState state)
+    {
+        userState = state;
+        return Task.CompletedTask;
+    }
+}

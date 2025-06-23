@@ -25,7 +25,7 @@ namespace MoysIQPlatform.Client.Services.Auth
 			}
 			else
 			{
-				_navigation.NavigateTo("login");
+				//_navigation.NavigateTo("login");
 			}
 
 			return await base.SendAsync(request, cancellationToken);

@@ -1,0 +1,33 @@
+﻿body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.center-content {
+    text-align: center;
+}
+
+.fade-in-out {
+    opacity: 0.5; /* Set initial opacity to 0 */
+    animation: fadeInOut 5s ease-in-out infinite; /* Apply the fadeInOut animation */
+}
+
+@keyframes fadeInOut {
+    0%, 100% {
+        opacity: 0.5; /* Start and end with opacity 0 */
+    }
+
+    50% {
+        opacity: 1; /* Midway, set opacity to 1 */
+    }
+}
+
+.center-div {
+    text-align: center; /* Center text */
+    width: 80%; /* Set the width of the div */
+    margin-right: auto; /* Center the div */
+    margin-left: auto; /* Center the div */
+}

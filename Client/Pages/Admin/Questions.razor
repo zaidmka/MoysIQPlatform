@@ -2,11 +2,15 @@
 @inject IQuestionService QuestionService
 @using MoysIQPlatform.Shared.Models.Questions
 @using MoysIQPlatform.Client.Shared
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <h3>Question Management</h3>
-
-<CurrentUserState OnStateReady="HandleUserState" />
+<AuthorizeView Context="auth">
+    <Authorized>
+  <CurrentUserState OnStateReady="HandleUserState" />
 <p class="text-muted"><strong>@message</strong></p>
+
 
 @if (userState is not null && userState.IsAuthenticated)
 {
@@ -20,7 +24,7 @@ else if (!string.IsNullOrWhiteSpace(userState.ErrorMessage))
 {
 	<p class="text-danger">⚠️ @userState.ErrorMessage</p>
 }
-else if (!userState.IsApproved || !userState.HasRole("Editor"))
+else if (userState.IsApproved.Contains("false") || !userState.HasRole("Editor"))
 {
 	<p class="text-warning">⛔ You are not authorized to access this page.</p>
 }
@@ -86,7 +90,18 @@ else
 		</table>
 	}
 }
-
+ </Authorized>
+    <NotAuthorized>
+        <div class="center-content">
+            <img class="fade-in-out" src="/logo250.png" alt="Menu Icon" />
+            <h4 style="font-family:Cairo">
+                الرجاء تسجيل
+                <a href="login">الدخول  <MudIcon Icon="@Icons.Material.Filled.Login" Color="Color.Info" Size="Size.Medium" /> </a>
+                لغرض المحتوى
+            </h4>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
 @code {
 	private UserAuthState? userState;
 	private List<QuestionWithEmployeeDto>? questions;
@@ -113,7 +128,7 @@ else
 	{
 		userState = state;
 
-		if (state.Status == "active_employee")
+		if (state.Role.Contains("Editor") &&state.IsAuthenticated)
 		{
 			var result = await QuestionService.GetAllQuestions();
 			if (result.Success)

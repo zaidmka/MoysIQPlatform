@@ -14,10 +14,13 @@
 		var state = new UserAuthState
 		{
 			IsAuthenticated = user.Identity?.IsAuthenticated ?? false,
-			Role = user.FindFirst(ClaimTypes.Role)?.Value ?? "",
-			IsApproved = user.FindFirst("is_approved")?.Value == "true",
-			FullName = user.FindFirst(ClaimTypes.Name)?.Value ?? ""
+			Role = user.FindFirst("http://schemas.microsoft.com/ws/2008/06/identity/claims/role")?.Value ?? "",
+			IsApproved = user.FindFirst("is_approved")?.Value ?? "",
+			FullName = user.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name")?.Value ?? "",
+            Email = user.FindFirst(ClaimTypes.Email)?.Value ?? "",
+			
 		};
+
 
 		await OnStateReady.InvokeAsync(state);
 	}

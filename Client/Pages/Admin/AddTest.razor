@@ -3,41 +3,79 @@
 @inject NavigationManager Nav
 @using MoysIQPlatform.Shared.Models.Tests
 @using MudBlazor
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
+<AuthorizeView>
+    <Authorized>
+        <CurrentUserState OnStateReady="HandleUserState" />
 
-<MudPaper Class="pa-6 mx-auto mt-6" MaxWidth="500px" Elevation="4">
-    <MudText Typo="Typo.h5" Class="mb-4">📅 Create New Test</MudText>
+        @if (userState is null)
+        {
+            <MudText Typo="Typo.body1">جاري تحميل بيانات المستخدم...</MudText>
+        }
+        else
+        {
+            <div class="pa-4">
+                <MudText Typo="Typo.h6">👋 أهلاً، @userState.FullName</MudText>
+                <MudText Typo="Typo.subtitle1">📧 البريد الإلكتروني: @userState.Email</MudText>
+                <MudText Typo="Typo.subtitle1">📛 النوع: @(userState.Role)</MudText>
+                <MudText Typo="Typo.subtitle2">✅ حالة الاعتماد: @(userState.IsApproved)</MudText>
+            </div>
 
-    <MudTextField Label="Test Title" @bind-Value="newTest.Title" Required="true" />
+            @if (userState.Role.Contains("Editor") && userState.IsApproved.Contains("true"))
+            {
+                <MudPaper Class="pa-6 mx-auto mt-6" MaxWidth="500px" Elevation="4">
+                    <MudText Typo="Typo.h5" Class="mb-4">📅 Create New Test</MudText>
 
-    <MudDivider Class="my-3" />
+                    <MudTextField Label="Test Title" @bind-Value="newTest.Title" Required="true" />
 
-    <MudText Typo="Typo.subtitle1">Start Date & Time</MudText>
-    <MudDatePicker Label="Start Date" @bind-Date="startDate" Required="true" />
-    <MudTimePicker Label="Start Time" @bind-Time="startTime" AmPm="true" Required="true" />
+                    <MudDivider Class="my-3" />
 
-    <MudDivider Class="my-3" />
+                    <MudText Typo="Typo.subtitle1">Start Date & Time</MudText>
+                    <MudDatePicker Label="Start Date" @bind-Date="startDate" Required="true" />
+                    <MudTimePicker Label="Start Time" @bind-Time="startTime" AmPm="true" Required="true" />
 
-    <MudText Typo="Typo.subtitle1">End Date & Time</MudText>
-    <MudDatePicker Label="End Date" @bind-Date="endDate" Required="true" />
-    <MudTimePicker Label="End Time" @bind-Time="endTime" AmPm="true" Required="true" />
+                    <MudDivider Class="my-3" />
 
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4"
-               OnClick="CreateTest" Disabled="@isSaving" FullWidth="true">
-        <span class="d-flex align-items-center">
-            <i class="fas @(isSaving ? "fa-spinner fa-spin" : "fa-plus") me-2"></i>
-            @(isSaving ? "Saving..." : "Create Test")
-        </span>
-    </MudButton>
+                    <MudText Typo="Typo.subtitle1">End Date & Time</MudText>
+                    <MudDatePicker Label="End Date" @bind-Date="endDate" Required="true" />
+                    <MudTimePicker Label="End Time" @bind-Time="endTime" AmPm="true" Required="true" />
 
-    @if (showSuccessAlert)
-    {
-        <MudAlert Severity="Severity.Success" Class="mt-4" Dense="true" Elevation="2">
-            ✅ Test created successfully! ID: @createdTestId
-        </MudAlert>
-    }
-</MudPaper>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4"
+                               OnClick="CreateTest" Disabled="@isSaving" FullWidth="true">
+                        <span class="d-flex align-items-center">
+                            <i class="fas @(isSaving ? "fa-spinner fa-spin" : "fa-plus") me-2"></i>
+                            @(isSaving ? "Saving..." : "Create Test")
+                        </span>
+                    </MudButton>
 
+                    @if (showSuccessAlert)
+                    {
+                        <MudAlert Severity="Severity.Success" Class="mt-4" Dense="true" Elevation="2">
+                            ✅ Test created successfully! ID: @createdTestId
+                        </MudAlert>
+                    }
+                </MudPaper>
+            }
+            else
+            {
+                <MudText Typo="Typo.body1" Class="mt-4">ليس لديك صلاحية إنشاء اختبار.</MudText>
+            }
+        }
+
+    </Authorized>
+    <NotAuthorized>
+        <div class="center-content">
+            <img class="fade-in-out" src="/logo250.png" alt="Menu Icon" />
+            <h4 style="font-family:Cairo">
+                الرجاء تسجيل
+                <a href="login">الدخول  <MudIcon Icon="@Icons.Material.Filled.Login" Color="Color.Info" Size="Size.Medium" /> </a>
+                لغرض المحتوى
+            </h4>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
 @code {
     private CreateTestDto newTest = new();
 
@@ -50,7 +88,13 @@
     private bool isSaving = false;
     private bool showSuccessAlert = false;
     private int createdTestId;
+    private UserAuthState? userState;
 
+    private Task HandleUserState(UserAuthState state)
+    {
+        userState = state;
+        return Task.CompletedTask;
+    }
     private async Task CreateTest()
     {
         if (startDate == null || startTime == null || endDate == null || endTime == null)
@@ -88,6 +132,7 @@
         {
             createdTestId = await TestService.CreateTestAsync(newTest);
             showSuccessAlert = true;
+            await Task.Delay(500); // Simulate a short delay for UX
             await Task.Delay(500); // Simulate a short delay for UX
             Nav.NavigateTo($"/select-questions/{createdTestId}");
         }

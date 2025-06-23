@@ -1,4 +1,7 @@
-﻿<Router AppAssembly="@typeof(App).Assembly">
+﻿@using Microsoft.AspNetCore.Components.Authorization
+<CascadingAuthenticationState>
+
+<Router AppAssembly="@typeof(App).Assembly">
     <Found Context="routeData">
         <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
         <FocusOnNavigate RouteData="@routeData" Selector="h1" />
@@ -10,6 +13,8 @@
         </LayoutView>
     </NotFound>
 </Router>
+</CascadingAuthenticationState>
+
 <MudThemeProvider />
 <MudPopoverProvider />
 <MudDialogProvider />

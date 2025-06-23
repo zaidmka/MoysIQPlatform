@@ -1,38 +1,77 @@
 ﻿@page "/login"
+@using System.ComponentModel.DataAnnotations
 @using MoysIQPlatform.Shared.Models.Accounts
 @inject IEmployeeService EmployeeService
 @inject NavigationManager Nav
 
-<h3>Employee Login</h3>
+<MudPaper Class="pa-6 mx-auto mt-6" MaxWidth="500px" Elevation="4">
+    <h3 class="text-center mb-4">🔐 Employee Login</h3>
 
-@if (!string.IsNullOrEmpty(Message))
-{
-	<div class="alert alert-danger">@Message</div>
-}
+    @if (!string.IsNullOrEmpty(Message))
+    {
+        <MudAlert Severity="Severity.Error" Elevation="0">@Message</MudAlert>
+    }
 
-<EditForm Model="loginModel" OnValidSubmit="HandleLogin">
-	<DataAnnotationsValidator />
-	<ValidationSummary />
+    <EditForm Model="loginModel" OnValidSubmit="HandleLogin" OnInvalidSubmit="HandleInvalid">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
 
-	<InputText @bind-Value="loginModel.Email" class="form-control mb-2" placeholder="Email" />
-	<InputText @bind-Value="loginModel.Password" class="form-control mb-2" placeholder="Password" type="password" />
-	<button class="btn btn-primary" type="submit">Login</button>
-</EditForm>
+        <MudTextField Label="Email"
+                      @bind-Value="loginModel.Email"
+                      For="@(() => loginModel.Email)"
+                      InputType="InputType.Email"
+                      Required="true"
+                      Class="mb-3" />
+
+        <MudTextField Label="Password"
+                      @bind-Value="loginModel.Password"
+                      For="@(() => loginModel.Password)"
+                      InputType="InputType.Password"
+                      Required="true"
+                      Class="mb-3" />
+
+        <MudButton ButtonType="ButtonType.Submit"
+                   Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   FullWidth>
+            Login
+        </MudButton>
+    </EditForm>
+
+    <div class="mt-4 text-center">
+        <span>ما عندك حساب؟</span>
+        <MudLink Href="/register">سجل الآن</MudLink>
+    </div>
+</MudPaper>
 
 @code {
-	private EmployeeLogin loginModel = new();
-	private string? Message;
+    private EmployeeLogin loginModel = new();
+    private string? Message;
 
-	private async Task HandleLogin()
-	{
-		var result = await EmployeeService.Login(loginModel);
+    private async Task HandleLogin()
+    {
+        Console.WriteLine($"📥 Email: '{loginModel.Email}'");
+        Console.WriteLine($"📥 Password: '{loginModel.Password}'");
 
-		if (!result.Success)
-		{
-			Message = result.Message;
-			return;
-		}
+        if (string.IsNullOrWhiteSpace(loginModel.Email) || string.IsNullOrWhiteSpace(loginModel.Password))
+        {
+            Console.WriteLine("❌ One or more fields are empty!");
+            return;
+        }
 
-		Nav.NavigateTo("/");
-	}
+        var result = await EmployeeService.Login(loginModel);
+
+        if (!result.Success)
+        {
+            Message = result.Message;
+            return;
+        }
+
+        Nav.NavigateTo("/");
+    }
+
+    private void HandleInvalid(EditContext context)
+    {
+        Console.WriteLine("❌ النموذج غير صالح");
+    }
 }
