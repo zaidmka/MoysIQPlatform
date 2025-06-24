@@ -1,4 +1,6 @@
-﻿using MoysIQPlatform.Shared.Models.Tests;
+﻿using MoysIQPlatform.Shared.Models;
+using MoysIQPlatform.Shared.Models.Questions;
+using MoysIQPlatform.Shared.Models.Tests;
 
 namespace MoysIQPlatform.Client.Services.TestService
 {
@@ -9,5 +11,9 @@ namespace MoysIQPlatform.Client.Services.TestService
 		Task AttachQuestionsAsync(AttachQuestionsDto dto);
 		Task<List<QuestionSelection>> GetQuestionsForTestAsync(int testId);
 		Task<TestDto> GetTestByIdAsync(int testId);
+		Task<List<StudentTestQuestionDto>> GetValidTestQuestionsAsync(int testId);
+
+
+
 	}
 }

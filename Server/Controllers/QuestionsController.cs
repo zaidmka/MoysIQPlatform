@@ -38,6 +38,21 @@ namespace MoysIQPlatform.Server.Controllers
 			var result = await _questionService.CreateQuestion(question);
 			return Ok(result);
 		}
+		[HttpPost("bulk")]
+		public async Task<ActionResult<ServiceResponse<string>>> CreateBulk(List<QuestionCreateDto> questions)
+		{
+			foreach (var question in questions)
+			{
+				await _questionService.CreateQuestion(question);
+			}
+
+			return Ok(new ServiceResponse<string>
+			{
+				Data = "Bulk creation successful",
+				Success = true,
+				Message = $"{questions.Count} questions added successfully"
+			});
+		}
 
 		[HttpPut("{id}")]
 		public async Task<ActionResult<ServiceResponse<Question>>> Update(int id, Question updatedQuestion)

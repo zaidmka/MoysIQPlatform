@@ -1,4 +1,6 @@
 ﻿using MoysIQPlatform.Server.Data;
+using MoysIQPlatform.Shared.Models;
+using MoysIQPlatform.Shared.Models.Questions;
 using MoysIQPlatform.Shared.Models.Tests;
 using System.Data;
 
@@ -132,6 +134,88 @@ namespace MoysIQPlatform.Server.Services.TestService
 				StartTime = test.StartTime,
 				EndTime = test.EndTime
 			};
+
+		}
+
+		public async Task<ServiceResponse<List<StudentTestQuestionDto>>> GetValidTest(int testId, int studentId)
+		{
+			var studentCheck = await _context.Students
+				.Where(t => t.Id == testId).FirstOrDefaultAsync();
+			if (studentCheck == null || !studentCheck.IsApproved)
+			{
+				return new ServiceResponse<List<StudentTestQuestionDto>>
+				{
+					Data = null,
+					Message = "Student not found , or not active",
+					Success = true
+				};
+
+			}
+			var testQuestions = await _context.TestQuestions
+				.Include(t => t.Test)
+				.Include(q => q.Question)
+				.ThenInclude(q => q.Options)
+				.Where(t => t.TestId == testId)
+				.ToListAsync();
+
+			if (!testQuestions.Any())
+			{
+				return new ServiceResponse<List<StudentTestQuestionDto>>
+				{
+					Data = null,
+					Message = "no message found",
+					Success = true
+				};
+			};
+			int totalQuestions = 20;
+			int mandatoryCount = (int)Math.Ceiling(totalQuestions * 0.3);
+
+			// choose the mandatory and optional questions
+			var mandatoryQuestions = testQuestions.Where(q => q.IsMandatory).ToList();
+			var optionalQuestions = testQuestions.Where(q => !q.IsMandatory).ToList();
+
+			// choose random mandatory questions
+			var selectedMandatory = mandatoryQuestions.OrderBy(_ => Guid.NewGuid())
+													  .Take(mandatoryCount)
+													  .ToList();
+
+			// calculate remaining count for optional questions
+			var remainingCount = totalQuestions - selectedMandatory.Count;
+			var selectedOptional = optionalQuestions.OrderBy(_ => Guid.NewGuid())
+													.Take(remainingCount)
+													.ToList();
+
+			// merge selected mandatory and optional questions
+			var finalSelected = selectedMandatory.Concat(selectedOptional).ToList();
+			List<StudentTestQuestionDto> _studentTestQuestionDto = new List<StudentTestQuestionDto>();
+
+			foreach (var tq in finalSelected)
+			{
+				_studentTestQuestionDto.Add(new StudentTestQuestionDto
+				{
+					TestId = tq.Test.Id,
+					QuestionId = tq.Question.Id,
+					IsMandatory = tq.IsMandatory,
+					Weight = tq.Question.Weight,
+					QuestionType = tq.Question.Type.ToString(), // Assuming Type is an enum in Question model
+					QuestionText = tq.Question.Text,
+					Answers = tq.Question.Options.Select(o => new StudentAnswerOptionsDto
+					{
+						 answerId= o.Id,
+						answerText = o.Text,
+						questionId = tq.Question.Id,
+					}).ToList()
+				});
+			}
+			
+			return new ServiceResponse<List<StudentTestQuestionDto>>
+			{
+				Data = _studentTestQuestionDto,
+				Message = "Test questions retrieved successfully.",
+				Success = true
+			};
+				
+
 
 		}
 	}

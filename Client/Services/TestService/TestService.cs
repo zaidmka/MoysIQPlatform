@@ -1,5 +1,7 @@
-﻿using System.Net.Http.Json;
+﻿using MoysIQPlatform.Shared.Models;
+using MoysIQPlatform.Shared.Models.Questions;
 using MoysIQPlatform.Shared.Models.Tests;
+using System.Net.Http.Json;
 
 namespace MoysIQPlatform.Client.Services.TestService
 {
@@ -42,5 +44,17 @@ namespace MoysIQPlatform.Client.Services.TestService
 			var response = await _http.GetAsync($"api/test/{testId}");
 			return await response.Content.ReadFromJsonAsync<TestDto>();
 		}
+
+		public async Task<List<StudentTestQuestionDto>> GetValidTestQuestionsAsync(int testId)
+		{
+			var response = await _http.GetFromJsonAsync<ServiceResponse<List<StudentTestQuestionDto>>>(
+				$"api/Test/valid/{testId}");
+
+			if (response != null && response.Success)
+				return response.Data ?? new List<StudentTestQuestionDto>();
+			else
+				throw new Exception(response?.Message ?? "Failed to fetch test questions.");
+		}
+
 	}
 }

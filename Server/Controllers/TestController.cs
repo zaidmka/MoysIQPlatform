@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MoysIQPlatform.Server.Services.TestService;
+using MoysIQPlatform.Shared.Models;
+using MoysIQPlatform.Shared.Models.Questions;
 using MoysIQPlatform.Shared.Models.Tests;
 using System.Security.Claims;
 
@@ -106,6 +108,23 @@ namespace MoysIQPlatform.Server.Controllers
 				return BadRequest(ex.Message);
 			}
 		}
+
+		[Authorize]
+		[HttpGet("valid/{testId}")]
+		public async Task<ActionResult<ServiceResponse<List<StudentAnswerOptionsDto>>>> GetValidTest(int testId)
+		{
+			try
+			{
+				var studentId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new Exception("Missing ID claim."));
+				var validTest = await _testService.GetValidTest(testId,studentId);
+				return Ok(validTest);
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ex.Message);
+			}
+		}
+
 
 
 	}
