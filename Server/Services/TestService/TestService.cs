@@ -118,7 +118,7 @@ namespace MoysIQPlatform.Server.Services.TestService
 
 		public async Task<TestDto> GetTestByIdAsync(int testId, int employeeId, string employeeRole)
 		{
-			var allowedRoles = new[] { "Admin", "Editor" };
+			var allowedRoles = new[] { "Admin", "Editor","Student" };
 			if (!allowedRoles.Contains(employeeRole))
 				throw new UnauthorizedAccessException("You are not authorized to attach questions.");
 

@@ -4,44 +4,65 @@
 @inject ITestService TestService
 @inject NavigationManager Nav
 
-<h3>📘 صفحة الاختبار</h3>
+<div dir="rtl" class="pa-4">
 
-@if (errorMessage != null)
-{
-    <MudAlert Severity="Severity.Error">@errorMessage</MudAlert>
-}
-else if (questions == null)
-{
-    <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
-    <p>جاري تحميل البيانات...</p>
-}
-else
-{
-    <EditForm Model="answers">
-        @foreach (var q in questions)
-        {
-            <MudPaper Class="my-4 p-4">
-                <h5>@q.QuestionText</h5>
+    @if (errorMessage != null)
+    {
+        <MudAlert Severity="Severity.Error" Elevation="4" Variant="Variant.Filled" Color="Color.Error" Class="my-2">
+            @errorMessage
+        </MudAlert>
+    }
+    else if (questions == null)
+    {
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" Class="my-4" />
+        <p class="text-center">⏳ جاري تحميل البيانات...</p>
+    }
+    else
+    {
+        <MudPaper Class="pa-6 my-4" Elevation="4">
+            <h3 class="mb-2">📘 <strong>@_test.Title</strong></h3>
+            <p class="text-muted">🕒 من <strong>@_test.StartTime.ToLocalTime():g</strong> إلى <strong>@_test.EndTime.ToLocalTime():g</strong></p>
+        </MudPaper>
 
-                @if (q.QuestionType == "MCQ")
-                {
-                    <MudRadioGroup T="string" @bind-SelectedValue="answers[q.QuestionId]">
-                        @foreach (var option in q.Answers)
-                        {
-                            <MudRadio T="string" Value="@option.answerText">@option.answerText</MudRadio>
-                        }
-                    </MudRadioGroup>
-                }
-                else
-                {
-                    <MudTextField @bind-Value="answers[q.QuestionId]" Label="إجابتك هنا..." />
-                }
-            </MudPaper>
-        }
+        <MudAlert Severity="Severity.Success" Variant="Variant.Outlined" Color="Color.Success" Class="mb-4">
+            @message
+        </MudAlert>
 
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit">📤 ارسال الإجابات</MudButton>
-    </EditForm>
-}
+        <EditForm Model="answers">
+            @{
+                int index = 1;
+            }
+            @foreach (var q in questions)
+            {
+                <MudPaper Class="my-3 p-4" Elevation="2" Style="background-color: #f9f9f9;">
+                    <h5 class="mb-3">❓ <strong>@(index++) - @q.QuestionText</strong></h5>
+
+                    @if (q.QuestionType == "MCQ")
+                    {
+                        <MudRadioGroup T="string" @bind-SelectedValue="answers[q.QuestionId]" Class="d-flex flex-column gap-2">
+                            @foreach (var option in q.Answers)
+                            {
+                                <MudRadio T="string" Value="@option.answerText">
+                                    <span>@option.answerText</span>
+                                </MudRadio>
+                            }
+                        </MudRadioGroup>
+                    }
+                    else
+                    {
+                        <MudTextField @bind-Value="answers[q.QuestionId]" Label="✏️ اكتب إجابتك هنا" Variant="Variant.Outlined" FullWidth="true" />
+                    }
+                </MudPaper>
+            }
+
+            <div class="text-center mt-6">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Size="Size.Large" Class="px-6">
+                    📤 ارسال الإجابات
+                </MudButton>
+            </div>
+        </EditForm>
+    }
+</div>
 
 @code {
     [Parameter]
@@ -50,6 +71,8 @@ else
     private List<StudentTestQuestionDto>? questions;
     private Dictionary<int, string> answers = new();
     private string? errorMessage;
+    private string message = "";
+    private TestDto? _test;
 
     protected override async Task OnInitializedAsync()
     {
@@ -77,6 +100,8 @@ else
                 return;
             }
 
+            message = "✅ هذا الاختبار متاح حالياً.";
+            _test = test;
             foreach (var q in questions)
             {
                 answers[q.QuestionId] = string.Empty;
@@ -84,7 +109,7 @@ else
         }
         catch (Exception ex)
         {
-            errorMessage = "حدث خطأ أثناء تحميل البيانات: " + ex.Message;
+            errorMessage = "❗ حدث خطأ أثناء تحميل البيانات: " + ex.Message;
         }
     }
 
