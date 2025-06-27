@@ -1,6 +1,7 @@
 using MoysIQPlatform.Shared.Models.Accounts;
 using MoysIQPlatform.Shared.Models.Questions;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace MoysIQPlatform.Shared.Models.Tests;
 
@@ -19,8 +20,12 @@ public class StudentAnswer
 	public DateTime AnsweredAt { get; set; } = DateTime.UtcNow;
 
 	// Navigation Properties
-	public Student Student { get; set; } = default!;
-	public Test Test { get; set; } = default!;
-	public Question Question { get; set; } = default!;
+	[JsonIgnore]
+	public Student Student { get; set; }
+	[JsonIgnore]
+	public Test Test { get; set; }
+	[JsonIgnore]
+	public Question Question { get; set; }
+	[JsonIgnore]
 	public AnswerOption? AnswerOption { get; set; }
 }

@@ -12,7 +12,7 @@ namespace MoysIQPlatform.Client.Services.TestService
 		Task<List<QuestionSelection>> GetQuestionsForTestAsync(int testId);
 		Task<TestDto> GetTestByIdAsync(int testId);
 		Task<List<StudentTestQuestionDto>> GetValidTestQuestionsAsync(int testId);
-
+		Task<ServiceResponse<List<StudentAnswerDto>>> StudentAnswerSubmit(List<StudentAnswerDto> studentAnswers);
 
 
 	}

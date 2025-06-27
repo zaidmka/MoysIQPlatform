@@ -1,0 +1,27 @@
+﻿@using MoysIQPlatform.Shared.Models.Tests
+@using MoysIQPlatform.Shared.Models.Questions
+@using MudBlazor
+
+<MudPaper Class="my-3 p-4" Elevation="2" Style="background-color: #f9f9f9;">
+    <h5 class="mb-3">❓ <strong>@Question.QuestionText</strong></h5>
+
+    @if (Question.QuestionType == "MCQ")
+    {
+        <MudRadioGroup T="int?" @bind-SelectedValue="Answer.AnswerOptionId" Class="d-flex flex-column gap-2">
+            @foreach (var option in Question.Answers)
+            {
+                <MudRadio T="int?" Value="@option.answerId">@option.answerText</MudRadio>
+            }
+        </MudRadioGroup>
+    }
+    else
+    {
+        <MudTextField @bind-Value="Answer.WrittenAnswer" Label="✏️ اكتب إجابتك هنا" Variant="Variant.Outlined" FullWidth="true" />
+    }
+</MudPaper>
+
+@code {
+    [Parameter] public StudentTestQuestionDto Question { get; set; } = default!;
+    [Parameter] public StudentAnswerDto Answer { get; set; } = default!;
+    [Parameter] public int Index { get; set; }
+}

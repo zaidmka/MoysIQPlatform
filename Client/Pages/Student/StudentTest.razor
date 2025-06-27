@@ -4,77 +4,125 @@
 @inject ITestService TestService
 @inject NavigationManager Nav
 
-<div dir="rtl" class="pa-4">
+<div class="container py-4" dir="rtl">
+    <CurrentUserState OnStateReady="HandleUserState" />
 
-    @if (errorMessage != null)
+    @if (userState == null)
     {
-        <MudAlert Severity="Severity.Error" Elevation="4" Variant="Variant.Filled" Color="Color.Error" Class="my-2">
-            @errorMessage
-        </MudAlert>
+        <div class="text-center my-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2">🔐 جارٍ تحميل بيانات المستخدم...</p>
+        </div>
     }
+    else if (!userState.IsAuthenticated || userState.IsApproved == "false" || !userState.Role.Contains("Student"))
+    {
+        <div class="alert alert-warning mt-3">
+            🚫 لا يمكنك الوصول إلى هذه الصفحة. يجب أن تكون طالباً مسجلاً وموافقاً عليه.
+        </div>
+    }
+    else if (errorMessage != null)
+    {
+        <div class="alert alert-danger mt-3">@errorMessage</div>
+        <button class="btn btn-danger" @onclick="CancelError">okay</button>
+    }
+    else if (SubmitMessage != null)
+    {
+         <div class="alert alert-danger mt-3">@SubmitMessage</div>
+        <button class="btn btn-danger" @onclick="SubmitAction">الذهاب للصفحة الرئيسية</button>
+    }
+
     else if (questions == null)
     {
-        <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" Class="my-4" />
-        <p class="text-center">⏳ جاري تحميل البيانات...</p>
+        <div class="text-center my-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2">⏳ جاري تحميل الأسئلة...</p>
+        </div>
     }
     else
     {
-        <MudPaper Class="pa-6 my-4" Elevation="4">
+        <div class="card shadow-sm mb-4 p-4">
             <h3 class="mb-2">📘 <strong>@_test.Title</strong></h3>
             <p class="text-muted">🕒 من <strong>@_test.StartTime.ToLocalTime():g</strong> إلى <strong>@_test.EndTime.ToLocalTime():g</strong></p>
-        </MudPaper>
+            <div class="alert alert-success mt-3">@message</div>
+        </div>
 
-        <MudAlert Severity="Severity.Success" Variant="Variant.Outlined" Color="Color.Success" Class="mb-4">
-            @message
-        </MudAlert>
+<EditForm Model="answerList">
+    @foreach (var answer in answerList)
+    {
+        var q = questionMap[answer.QuestionId];
 
-        <EditForm Model="answers">
-            @{
-                int index = 1;
-            }
-            @foreach (var q in questions)
+        <div class="card mb-3 p-3 shadow-sm">
+            <h5>❓ <strong>@q.QuestionText</strong></h5>
+
+            @if (q.QuestionType == "MCQ")
             {
-                <MudPaper Class="my-3 p-4" Elevation="2" Style="background-color: #f9f9f9;">
-                    <h5 class="mb-3">❓ <strong>@(index++) - @q.QuestionText</strong></h5>
+<InputRadioGroup @bind-Value="answer.AnswerOptionId">
+    @foreach (var option in q.Answers)
+    {
+        var isSelected = answer.AnswerOptionId == option.answerId;
 
-                    @if (q.QuestionType == "MCQ")
-                    {
-                        <MudRadioGroup T="string" @bind-SelectedValue="answers[q.QuestionId]" Class="d-flex flex-column gap-2">
-                            @foreach (var option in q.Answers)
-                            {
-                                <MudRadio T="string" Value="@option.answerText">
-                                    <span>@option.answerText</span>
-                                </MudRadio>
-                            }
-                        </MudRadioGroup>
-                    }
-                    else
-                    {
-                        <MudTextField @bind-Value="answers[q.QuestionId]" Label="✏️ اكتب إجابتك هنا" Variant="Variant.Outlined" FullWidth="true" />
-                    }
-                </MudPaper>
+        <div class="form-check form-check mt-2 d-flex align-items-center justify-content-between"
+             style="background-color:@(isSelected ? "#e6f9ed" : "white"); border: 1px solid #ddd; border-radius: 6px; padding: 10px;">
+
+            <InputRadio Value="@option.answerId"
+                        AdditionalAttributes="@(new Dictionary<string, object>
+                        {
+                            ["name"] = $"question-{q.QuestionId}",
+                            ["class"] = "form-check-input"
+                        })" />
+             <label class="form-check-label" style="flex: 1; font-weight: @(isSelected ? "bold" : "normal"); margin-right:30px;">
+                @option.answerText
+            </label>
+
+           
+        </div>
+    }
+</InputRadioGroup>
+
             }
+            else
+            {
+                <textarea class="form-control mt-2"
+                          @bind="answer.WrittenAnswer"
+                          placeholder="✏️ اكتب إجابتك هنا..."></textarea>
+            }
+        </div>
+    }
 
-            <div class="text-center mt-6">
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Size="Size.Large" Class="px-6">
-                    📤 ارسال الإجابات
-                </MudButton>
-            </div>
-        </EditForm>
+    <div class="text-center mt-4">
+        <button class="btn btn-primary px-4 py-2" @onclick="Submit">
+            📤 ارسال الإجابات
+        </button>
+    </div>
+</EditForm>
+
     }
 </div>
 
 @code {
-    [Parameter]
-    public int TestId { get; set; }
-
+    [Parameter] public int TestId { get; set; }
+    private string? SubmitMessage { get; set; }
+    private UserAuthState? userState;
+    private int studentId;
     private List<StudentTestQuestionDto>? questions;
-    private Dictionary<int, string> answers = new();
+    private Dictionary<int, StudentTestQuestionDto> questionMap = new();
+    private List<StudentAnswerDto> answerList = new();
     private string? errorMessage;
     private string message = "";
     private TestDto? _test;
 
-    protected override async Task OnInitializedAsync()
+    private async Task HandleUserState(UserAuthState state)
+    {
+        userState = state;
+
+        if (!state.IsAuthenticated || state.IsApproved == "false" || !state.Role.Contains("Student"))
+            return;
+
+        studentId = 1; // استبدله بالـ real ID لاحقاً
+        await LoadTestAndQuestions();
+    }
+
+    private async Task LoadTestAndQuestions()
     {
         try
         {
@@ -100,11 +148,19 @@
                 return;
             }
 
-            message = "✅ هذا الاختبار متاح حالياً.";
+            questionMap = questions.ToDictionary(q => q.QuestionId);
             _test = test;
+            message = "✅ هذا الاختبار متاح حالياً.";
+
             foreach (var q in questions)
             {
-                answers[q.QuestionId] = string.Empty;
+                answerList.Add(new StudentAnswerDto
+                {
+                    StudentId = studentId,
+                    TestId = TestId,
+                    QuestionId = q.QuestionId,
+                    AnsweredAt = DateTime.UtcNow
+                });
             }
         }
         catch (Exception ex)
@@ -113,14 +169,39 @@
         }
     }
 
-    private void Submit()
+    private async Task Submit()
     {
-        Console.WriteLine("📤 الإجابات:");
-        foreach (var entry in answers)
+        if (answerList.Any(a => a.AnswerOptionId == null && string.IsNullOrWhiteSpace(a.WrittenAnswer)))
         {
-            Console.WriteLine($"سؤال ID: {entry.Key} => إجابة: {entry.Value}");
+            errorMessage = "⚠️ يرجى الإجابة على جميع الأسئلة قبل الإرسال.";
+            return;
         }
 
-        // بإمكانك مستقبلاً استدعاء API لحفظ الإجابات هنا
+        try
+        {
+            var response = await TestService.StudentAnswerSubmit(answerList);
+
+            if (response.Success)
+            {
+                message = "✅ تم إرسال الإجابات بنجاح!";
+                //Nav.NavigateTo("/student-dashboard");
+            }
+            else
+            {
+                errorMessage = "❌ فشل إرسال الإجابات: " + response.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "❗ حدث خطأ أثناء إرسال الإجابات: " + ex.Message;
+        }
+    }
+    private void CancelError()
+    {
+        errorMessage = null;
+    }
+    private void SubmitAction()
+    {
+        Nav.NavigateTo("/index");
     }
 }

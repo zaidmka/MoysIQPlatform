@@ -56,5 +56,21 @@ namespace MoysIQPlatform.Client.Services.TestService
 				throw new Exception(response?.Message ?? "Failed to fetch test questions.");
 		}
 
+		public async Task<ServiceResponse<List<StudentAnswerDto>>> StudentAnswerSubmit(List<StudentAnswerDto> studentAnswers)
+		{
+			var response = await _http.PostAsJsonAsync("api/test/submit-answers", studentAnswers);
+
+			var result = await response.Content.ReadFromJsonAsync<ServiceResponse<List<StudentAnswerDto>>>();
+
+			if (response.IsSuccessStatusCode && result != null)
+			{
+				return result;
+			}
+			else
+			{
+				throw new Exception(result?.Message ?? "حدث خطأ أثناء إرسال الإجابات.");
+			}
+		}
+
 	}
 }

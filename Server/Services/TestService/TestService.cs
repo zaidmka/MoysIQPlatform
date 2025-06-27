@@ -140,7 +140,7 @@ namespace MoysIQPlatform.Server.Services.TestService
 		public async Task<ServiceResponse<List<StudentTestQuestionDto>>> GetValidTest(int testId, int studentId)
 		{
 			var studentCheck = await _context.Students
-				.Where(t => t.Id == testId).FirstOrDefaultAsync();
+				.Where(t => t.Id == studentId).FirstOrDefaultAsync();
 			if (studentCheck == null || !studentCheck.IsApproved)
 			{
 				return new ServiceResponse<List<StudentTestQuestionDto>>
@@ -218,5 +218,109 @@ namespace MoysIQPlatform.Server.Services.TestService
 
 
 		}
+
+		public async Task<ServiceResponse<List<StudentAnswerDto>>> StudentAnswerSubmit(List<StudentAnswerDto> studentAnswers)
+		{
+			// Check if the input list is null or empty
+			if (studentAnswers == null || !studentAnswers.Any())
+			{
+				return new ServiceResponse<List<StudentAnswerDto>>
+				{
+					Data = null,
+					Message = "No answers provided.",
+					Success = false
+				};
+			}
+
+			var studentId = studentAnswers[0].StudentId;
+			var testId = studentAnswers[0].TestId;
+
+			// Verify student exists and is approved
+			var studentCheck = await _context.Students.FirstOrDefaultAsync(t => t.Id == studentId);
+			if (studentCheck == null || !studentCheck.IsApproved)
+			{
+				return new ServiceResponse<List<StudentAnswerDto>>
+				{
+					Data = null,
+					Message = "Student not found or not approved.",
+					Success = false
+				};
+			}
+
+			// Verify test exists
+			var testCheck = await _context.Tests.FirstOrDefaultAsync(t => t.Id == testId);
+			if (testCheck == null)
+			{
+				return new ServiceResponse<List<StudentAnswerDto>>
+				{
+					Data = null,
+					Message = "Test not found.",
+					Success = false
+				};
+			}
+
+			// Validate all answers belong to the same student and test
+			bool mixedStudent = studentAnswers.Any(a => a.StudentId != studentId);
+			bool mixedTest = studentAnswers.Any(a => a.TestId != testId);
+
+			if (mixedStudent || mixedTest)
+			{
+				return new ServiceResponse<List<StudentAnswerDto>>
+				{
+					Data = null,
+					Message = "Answers must belong to one student and one test only.",
+					Success = false
+				};
+			}
+
+			// Ensure every answer has either option or written text
+			foreach (var answer in studentAnswers)
+			{
+				if (answer.AnswerOptionId == null && string.IsNullOrWhiteSpace(answer.WrittenAnswer))
+				{
+					return new ServiceResponse<List<StudentAnswerDto>>
+					{
+						Data = null,
+						Message = $"Answer for question {answer.QuestionId} is missing.",
+						Success = false
+					};
+				}
+			}
+
+			// Convert DTOs to actual StudentAnswer entities
+			var entityAnswers = studentAnswers.Select(dto => new StudentAnswer
+			{
+				StudentId = dto.StudentId,
+				TestId = dto.TestId,
+				QuestionId = dto.QuestionId,
+				AnswerOptionId = dto.AnswerOptionId,
+				WrittenAnswer = dto.WrittenAnswer,
+				AnsweredAt = dto.AnsweredAt
+			}).ToList();
+
+			_context.StudentAnswers.AddRange(entityAnswers);
+
+			try
+			{
+				await _context.SaveChangesAsync();
+
+				return new ServiceResponse<List<StudentAnswerDto>>
+				{
+					Data = studentAnswers,
+					Message = "Answers submitted successfully.",
+					Success = true
+				};
+			}
+			catch (Exception ex)
+			{
+				return new ServiceResponse<List<StudentAnswerDto>>
+				{
+					Data = null,
+					Message = $"An error occurred while submitting answers: {ex.Message}",
+					Success = false
+				};
+			}
+		}
+
 	}
 }

@@ -125,6 +125,29 @@ namespace MoysIQPlatform.Server.Controllers
 			}
 		}
 
+		[Authorize]
+		[HttpPost("submit-answers")]
+		public async Task<ActionResult<ServiceResponse<List<StudentAnswerDto>>>> SubmitAnswers([FromBody] List<StudentAnswerDto> studentAnswers)
+		{
+			try
+			{
+				var response = await _testService.StudentAnswerSubmit(studentAnswers);
+				if (response.Success)
+					return Ok(response);
+				else
+					return BadRequest(response);
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(new ServiceResponse<List<StudentAnswerDto>>
+				{
+					Data = null,
+					Message = $"❌ Exception: {ex.Message}",
+					Success = false
+				});
+			}
+		}
+
 
 
 	}
