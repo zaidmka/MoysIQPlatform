@@ -3,6 +3,8 @@
 @using MoysIQPlatform.Shared.Models.Tests
 @inject ITestService TestService
 @inject NavigationManager Nav
+@inject IJSRuntime JS
+
 
 <div class="container py-4" dir="rtl">
     <CurrentUserState OnStateReady="HandleUserState" />
@@ -52,6 +54,9 @@
             <p class="text-muted">🕒 من <strong>@_test.StartTime.ToLocalTime():g</strong> إلى <strong>@_test.EndTime.ToLocalTime():g</strong></p>
             <div class="alert alert-success mt-3">@message</div>
         </div>
+        <div id="test-timer" class="alert alert-info text-center fs-5 fw-bold">
+    ⏳ --:--
+</div>
 
 <EditForm Model="answerList">
     @foreach (var answer in answerList)
@@ -68,8 +73,11 @@
     {
         var isSelected = answer.AnswerOptionId == option.answerId;
 
-        <div class="form-check form-check mt-2 d-flex align-items-center justify-content-between"
-             style="background-color:@(isSelected ? "#e6f9ed" : "white"); border: 1px solid #ddd; border-radius: 6px; padding: 10px;">
+        <div class="form-check mt-2 d-flex align-items-center justify-content-between"
+             style="cursor: pointer; background-color:@(isSelected ? "#e6f9ed" : "white"); border: 1px solid #ddd; border-radius: 6px; padding: 10px; transition: background-color 0.2s ease-in-out;"
+            @onclick="@(() => OnOptionSelected(answer, option.answerId))"
+             onmouseover="this.style.backgroundColor='#f7f7f7';"
+             onmouseout="this.style.backgroundColor='@(isSelected ? "#e6f9ed" : "white")';">
 
             <InputRadio Value="@option.answerId"
                         AdditionalAttributes="@(new Dictionary<string, object>
@@ -77,14 +85,14 @@
                             ["name"] = $"question-{q.QuestionId}",
                             ["class"] = "form-check-input"
                         })" />
-             <label class="form-check-label" style="flex: 1; font-weight: @(isSelected ? "bold" : "normal"); margin-right:30px;">
+
+            <label class="form-check-label" style="flex: 1; font-weight: @(isSelected ? "bold" : "normal"); margin-right:30px;">
                 @option.answerText
             </label>
-
-           
         </div>
     }
 </InputRadioGroup>
+
 
             }
             else
@@ -117,7 +125,14 @@
     private string? errorMessage;
     private string message = "";
     private TestDto? _test;
+    private bool timerStarted = false;
 
+    private DotNetObjectReference<StudentTest>? dotNetRef;
+
+protected override void OnInitialized()
+{
+    dotNetRef = DotNetObjectReference.Create(this);
+}
     private async Task HandleUserState(UserAuthState state)
     {
         userState = state;
@@ -133,6 +148,10 @@
     {
         try
         {
+            await JS.InvokeVoidAsync("startTestTimer", 1);
+            await JS.InvokeVoidAsync("registerTestInstance", dotNetRef);
+
+
             var IsTestSubmitted = await TestService.IsTestSubmit(TestId);
             if (IsTestSubmitted.Data)
             {
@@ -219,4 +238,19 @@
     {
         Nav.NavigateTo("/");
     }
+    private async Task OnOptionSelected(StudentAnswerDto answer, int selectedId)
+{
+    answer.AnswerOptionId = selectedId;
+    await JS.InvokeVoidAsync("playClickSound");
+}
+[JSInvokable("SubmitFromTimer")]
+public async Task SubmitFromTimer()
+{
+    Console.WriteLine("⏱ Auto-submit triggered from timer.");
+    Nav.NavigateTo("/");
+}
+}
+}
+
+
 }

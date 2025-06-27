@@ -1,9 +1,11 @@
 ﻿@page "/"
 @using Microsoft.AspNetCore.Components.Authorization
+@using MoysIQPlatform.Shared.Models.Tests
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ITestService TestService
 
 
-
+<div dir="rtl">
 
 <AuthorizeView>
     <Authorized>
@@ -24,11 +26,28 @@
                 {
                     <MudPaper Class="pa-4 mt-4" Elevation="2">
                         <MudText Typo="Typo.h6">🎓 مرحباً بك في منصة الاختبارات</MudText>
-                        <MudButton Href="/available-tests" Variant="Variant.Filled" Color="Color.Primary" Class="mt-2">
-                            📋 عرض الاختبارات المتاحة
-                        </MudButton>
+                        @if (availableTests?.Any() == true)
+                        {
+                            <MudText Typo="Typo.subtitle2" Class="mt-2">🧪 لديك @availableTests.Count اختبار متاح.</MudText>
+
+                            @foreach (var test in availableTests)
+                            {
+                                <MudPaper Class="pa-3 mt-2" Elevation="1">
+                                    <MudText Typo="Typo.subtitle1">📘 @test.Title</MudText>
+                                    <MudText Typo="Typo.caption">⏰ المدة: @test.EndTime - @test.StartTime</MudText>
+                                    <MudButton Href="@($"/student-test/{test.Id}")" Color="Color.Primary" Variant="Variant.Filled" Class="mt-2">
+                                        🚀 ابدأ الاختبار
+                                    </MudButton>
+                                </MudPaper>
+                            }
+                        }
+                        else
+                        {
+                            <MudText Class="mt-2 text-info">📭 لا توجد اختبارات متاحة حالياً.</MudText>
+                        }
                     </MudPaper>
                 }
+
                 else if (userState.Role.Contains("Editor") || userState.Role.Contains("Admin"))
                 {
                     <MudPaper Class="pa-4 mt-4" Elevation="2">
@@ -77,13 +96,28 @@
         </div>
     </NotAuthorized>
 </AuthorizeView>
-
+</div>
 @code{
     private UserAuthState? userState;
+    private List<TestDto> availableTests = new();
 
-    private Task HandleUserState(UserAuthState state)
+
+    private async  Task HandleUserState(UserAuthState state)
     {
         userState = state;
-        return Task.CompletedTask;
+        if (userState.Role == "Student" && userState.IsApproved == "true")
+        {
+            availableTests = await TestService.GetAvailableTestsAsync();
+        }
+        else if (userState.Role == "Editor" || userState.Role == "Admin")
+        {
+
+        }
+        else
+        {
+            availableTests.Clear();
+        }
+
+        return;
     }
 }
