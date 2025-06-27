@@ -27,8 +27,15 @@
     }
     else if (SubmitMessage != null)
     {
+        <div class="alert alert-warning mt-3">
+            <strong>⚠️ تنبيه:</strong> لا يمكنك إعادة إرسال هذا الاختبار.</div>
          <div class="alert alert-danger mt-3">@SubmitMessage</div>
-        <button class="btn btn-danger" @onclick="SubmitAction">الذهاب للصفحة الرئيسية</button>
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+    <img src="leen500.png" height="250" class="mb-4" />
+    <button class="btn btn-danger" @onclick="SubmitAction">الذهاب للصفحة الرئيسية</button>
+</div>
+
+
     }
 
     else if (questions == null)
@@ -126,6 +133,13 @@
     {
         try
         {
+            var IsTestSubmitted = await TestService.IsTestSubmit(TestId);
+            if (IsTestSubmitted.Data)
+            {
+                SubmitMessage = "❌ لقد قمت بإرسال هذا الاختبار بالفعل.";
+                return;
+            }
+
             var test = await TestService.GetTestByIdAsync(TestId);
 
             if (test == null)
@@ -133,6 +147,7 @@
                 errorMessage = "🚫 هذا الاختبار غير موجود.";
                 return;
             }
+
 
             var now = DateTime.UtcNow;
             if (now < test.StartTime || now > test.EndTime)
@@ -202,6 +217,6 @@
     }
     private void SubmitAction()
     {
-        Nav.NavigateTo("/index");
+        Nav.NavigateTo("/");
     }
 }

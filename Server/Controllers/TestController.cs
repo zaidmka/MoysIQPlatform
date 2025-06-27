@@ -148,6 +148,27 @@ namespace MoysIQPlatform.Server.Controllers
 			}
 		}
 
+		[Authorize]
+		[HttpGet("is-submitted/{testId}")]
+		public async Task<ActionResult<ServiceResponse<bool>>> IsTestSubmitted(int testId)
+		{
+			try
+			{
+				var studentId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new Exception("Missing ID claim."));
+				var response = await _testService.IsTestSubmit(testId, studentId);
+				return Ok(response);
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(new ServiceResponse<bool>
+				{
+					Data = false,
+					Message = $"❌ Exception: {ex.Message}",
+					Success = false
+				});
+			}
+		}
+
 
 
 	}

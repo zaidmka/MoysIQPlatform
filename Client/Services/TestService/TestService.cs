@@ -72,5 +72,10 @@ namespace MoysIQPlatform.Client.Services.TestService
 			}
 		}
 
+		public async Task<ServiceResponse<bool>> IsTestSubmit(int testId)
+		{
+			
+			return await _http.GetFromJsonAsync<ServiceResponse<bool>>($"api/test/is-submitted/{testId}");
+		}
 	}
 }

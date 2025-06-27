@@ -219,6 +219,30 @@ namespace MoysIQPlatform.Server.Services.TestService
 
 		}
 
+		public async Task<ServiceResponse<bool>> IsTestSubmit(int testId, int studentId)
+		{
+			var response = await _context.StudentAnswers
+				.AnyAsync(sa => sa.TestId == testId && sa.StudentId == studentId);
+			if (response) {
+				return new ServiceResponse<bool>
+				{
+					Data = true,
+					Message = "Test already submitted.",
+					Success = true
+				};
+
+					}
+			else
+				{
+				return new ServiceResponse<bool>
+				{
+					Data = false,
+					Message = "Test not submitted yet.",
+					Success = true
+				};
+			}
+		}
+
 		public async Task<ServiceResponse<List<StudentAnswerDto>>> StudentAnswerSubmit(List<StudentAnswerDto> studentAnswers)
 		{
 			// Check if the input list is null or empty
