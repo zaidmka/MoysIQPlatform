@@ -1,0 +1,116 @@
+﻿@page "/student-profile"
+@using MoysIQPlatform.Shared.Models.Questions
+@using MoysIQPlatform.Shared.Models.Tests
+@inject ITestService TestService
+
+<div dir="rtl">
+<h3>📊 نتائج الطالب</h3>
+
+@if (scores == null)
+{
+    <p>⏳ جاري تحميل النتائج...</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>اسم الاختبار</th>
+                <th>التاريخ</th>
+                <th>الدرجة</th>
+                <th>التفاصيل</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var score in scores)
+            {
+                <tr>
+                    <td>@score.Test.Title</td>
+                    <td>@score.Date.ToString("yyyy/MM/dd")</td>
+                    <td>@score.Score</td>
+                    <td>
+                        <button class="btn btn-outline-info btn-sm" @onclick="@(() => ShowAnswers(score.TestId))">عرض</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+    @if (selectedAnswers != null)
+    {
+        <div class="mt-4 p-3 border">
+            <h5>📋 تفاصيل الأسئلة:</h5>
+
+            @if (!selectedAnswers.Any())
+            {
+                <p class="text-warning">🚫 لا توجد إجابات محفوظة لهذا الاختبار.</p>
+            }
+            else
+            {
+                @foreach (var answer in selectedAnswers)
+                {
+                    <div class="mb-3">
+                        <p><strong>السؤال:</strong> @answer.questions.Text</p>
+
+                        @if (answer.questions.Type == "Text")
+                        {
+                            <p>
+                                <strong>إجابتك:</strong> <span class="@((answer.IsCorrect ? "text-success" : "text-danger"))">
+                                    @answer.StudentAnswerText (@(answer.IsCorrect ? "✅ صحيح" : "❌ خطأ"))
+                                </span>
+                            </p>
+                        }
+                        else
+                        {
+                            <p>
+                                <strong>إجابتك:</strong> <span class="@((answer.IsCorrect ? "text-success" : "text-danger"))">
+                                    @GetOptionText(answer.questions, answer.StudentAnswerOptionId) (@(answer.IsCorrect ? "✅ صحيح" : "❌ خطأ"))
+                                </span>
+                            </p>
+                        }
+
+                        <p><strong>الجواب الصحيح:</strong> @answer.CorrectAnswerTextAtSubmission</p>
+                        <p><strong>الوزن:</strong> @answer.QuestionWeight</p>
+                        <hr />
+                    </div>
+                }
+            }
+        </div>
+    }
+
+</div>
+@code {
+    List<StudentScore>? scores;
+    List<StudentAnswerSnapshot>? selectedAnswers;
+    int? selectedTestId = null;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var res = await TestService.StudentScoreAsync();
+        if (res?.Data != null)
+            scores = res.Data;
+    }
+
+    async Task ShowAnswers(int testId)
+    {
+        if (selectedTestId == testId)
+        {
+            // if same button pressed will erase it
+            selectedAnswers = null;
+            selectedTestId = null;
+        }
+        else
+        {
+            var allAnswers = await TestService.StudentAnswersSnapshots();
+            selectedAnswers = allAnswers?.Data?.Where(a => a.TestId == testId).ToList();
+            selectedTestId = testId;
+        }
+    }
+
+    string GetOptionText(Question q, int? optionId)
+    {
+        return q.Options.FirstOrDefault(o => o.Id == optionId)?.Text ?? "❓ غير معروف";
+    }
+}

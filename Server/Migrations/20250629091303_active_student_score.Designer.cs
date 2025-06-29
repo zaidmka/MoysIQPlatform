@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MoysIQPlatform.Server.Data;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MoysIQPlatform.Server.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20250629091303_active_student_score")]
+    partial class active_student_score
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -255,60 +258,6 @@ namespace MoysIQPlatform.Server.Migrations
                     b.HasIndex("TestId");
 
                     b.ToTable("studentanswers");
-                });
-
-            modelBuilder.Entity("MoysIQPlatform.Shared.Models.Tests.StudentAnswerSnapshot", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("CorrectAnswerOptionIdAtSubmission")
-                        .HasColumnType("integer")
-                        .HasColumnName("correctansweroptionidatsubmission");
-
-                    b.Property<string>("CorrectAnswerTextAtSubmission")
-                        .HasColumnType("text")
-                        .HasColumnName("correctanswertextatsubmission");
-
-                    b.Property<bool>("IsCorrect")
-                        .HasColumnType("boolean")
-                        .HasColumnName("iscorrect");
-
-                    b.Property<int>("QuestionId")
-                        .HasColumnType("integer")
-                        .HasColumnName("questionid");
-
-                    b.Property<double>("QuestionWeight")
-                        .HasColumnType("double precision")
-                        .HasColumnName("questionweight");
-
-                    b.Property<int?>("StudentAnswerOptionId")
-                        .HasColumnType("integer")
-                        .HasColumnName("studentansweroptionid");
-
-                    b.Property<string>("StudentAnswerText")
-                        .HasColumnType("text")
-                        .HasColumnName("studentanswertext");
-
-                    b.Property<int>("StudentId")
-                        .HasColumnType("integer")
-                        .HasColumnName("studentid");
-
-                    b.Property<DateTime>("SubmittedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("submittedat");
-
-                    b.Property<int>("TestId")
-                        .HasColumnType("integer")
-                        .HasColumnName("testid");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("studentanswersnapshots");
                 });
 
             modelBuilder.Entity("MoysIQPlatform.Shared.Models.Tests.StudentScore", b =>

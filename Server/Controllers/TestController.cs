@@ -169,6 +169,50 @@ namespace MoysIQPlatform.Server.Controllers
 			}
 		}
 
+		[Authorize]
+		[HttpGet("student-scores")]
+		public async Task<ActionResult<ServiceResponse<List<StudentScore>>>> GetStudentScores()
+		{
+			try
+			{
+				var studentId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new Exception("Missing ID claim."));
+
+				var response = await _testService.GetStudentScoreAsync(studentId);
+				return Ok(response);
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(new ServiceResponse<List<StudentScore>>
+				{
+					Data = null,
+					Message = $"❌ Exception: {ex.Message}",
+					Success = false
+				});
+			}
+		}
+
+		[Authorize]
+		[HttpGet("student-answers")]
+		public async Task<ActionResult<ServiceResponse<List<StudentAnswerSnapshot>>>> GetStudentAnswerSnapshot()
+		{
+			try
+			{
+				var studentId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new Exception("Missing ID claim."));
+
+				var response = await _testService.GetStudentAnswerSnapshotAsync(studentId);
+				return Ok(response);
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(new ServiceResponse<List<StudentAnswerSnapshot>>
+				{
+					Data = null,
+					Message = $"❌ Exception: {ex.Message}",
+					Success = false
+				});
+			}
+		}
+
 
 
 	}

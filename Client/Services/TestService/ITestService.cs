@@ -14,6 +14,9 @@ namespace MoysIQPlatform.Client.Services.TestService
 		Task<List<StudentTestQuestionDto>> GetValidTestQuestionsAsync(int testId);
 		Task<ServiceResponse<List<StudentAnswerDto>>> StudentAnswerSubmit(List<StudentAnswerDto> studentAnswers);
 		Task<ServiceResponse<bool>> IsTestSubmit(int testId);
+		Task<ServiceResponse<List<StudentScore>>> StudentScoreAsync();
+		Task<ServiceResponse<List<StudentAnswerSnapshot>>> StudentAnswersSnapshots();
+		
 
 
 	}

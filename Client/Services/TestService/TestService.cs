@@ -77,5 +77,15 @@ namespace MoysIQPlatform.Client.Services.TestService
 			
 			return await _http.GetFromJsonAsync<ServiceResponse<bool>>($"api/test/is-submitted/{testId}");
 		}
+
+		public async Task<ServiceResponse<List<StudentScore>>> StudentScoreAsync()
+		{
+			return await _http.GetFromJsonAsync<ServiceResponse<List<StudentScore>>>($"api/test/student-scores/");
+		}
+
+		public async Task<ServiceResponse<List<StudentAnswerSnapshot>>> StudentAnswersSnapshots()
+		{
+			return await _http.GetFromJsonAsync<ServiceResponse<List<StudentAnswerSnapshot>>>($"api/test/student-answers/");
+		}
 	}
 }

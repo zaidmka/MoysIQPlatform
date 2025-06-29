@@ -112,6 +112,7 @@
 </EditForm>
 
     }
+                <div class="alert alert-success mt-3">@message</div>
 </div>
 
 @code {
@@ -218,7 +219,7 @@ protected override void OnInitialized()
             if (response.Success)
             {
                 message = "✅ تم إرسال الإجابات بنجاح!";
-                //Nav.NavigateTo("/student-dashboard");
+                Nav.NavigateTo("/");
             }
             else
             {

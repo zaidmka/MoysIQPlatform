@@ -16,6 +16,9 @@ namespace MoysIQPlatform.Server.Data
 		public DbSet<Test> Tests { get; set; }
 		public DbSet<TestQuestion> TestQuestions { get; set; }
 		public DbSet<StudentAnswer> StudentAnswers { get; set; }
+		public DbSet<StudentScore> StudentScores { get; set; }
+		public DbSet<StudentAnswerSnapshot> StudentAnswerSnapshots { get; set; }
+
 
 		//public DbSet<Test> Tests { get; set; }
 		//public DbSet<StudentTest> StudentTests { get; set; }

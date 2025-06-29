@@ -116,6 +116,87 @@ namespace MoysIQPlatform.Server.Services.TestService
 			return testQuestions;
 		}
 
+		public async Task<ServiceResponse<List<StudentAnswerSnapshot>>> GetStudentAnswerSnapshotAsync(int studentId)
+		{
+			var studentCheck = await _context.Students
+				.Where(s => s.Id == studentId)
+				.FirstOrDefaultAsync();
+			if (studentCheck == null || !studentCheck.IsApproved)
+				{
+				return new ServiceResponse<List<StudentAnswerSnapshot>>
+				{
+					Data = null,
+					Message = "Student not found or not active.",
+					Success = false
+				};
+
+			}
+
+			try
+			{
+				var response = await _context.StudentAnswerSnapshots
+					.Where(s => s.StudentId == studentId)
+					.Include(s => s.questions)
+					.ThenInclude(s=>s.Options)
+					.Include(s => s.test)
+					.ToListAsync();
+				return new ServiceResponse<List<StudentAnswerSnapshot>>
+				{
+					Data = response,
+					Message = response.Any() ? "Snapshots retrieved successfully." : "No snapshots found for this student.",
+					Success = true
+				};
+			}
+			catch (Exception ex)
+			{
+				return new ServiceResponse<List<StudentAnswerSnapshot>>
+				{
+					Data = null,
+					Message = $"An error occurred while retrieving snapshots: {ex.Message}",
+					Success = false
+				};
+			}
+		}
+
+		public async Task<ServiceResponse<List<StudentScore>>> GetStudentScoreAsync(int studentId)
+		{
+			var studentCheck = await _context.Students
+				.Where(s => s.Id == studentId)
+				.FirstOrDefaultAsync();
+			if (studentCheck == null || !studentCheck.IsApproved)
+			{
+				return new ServiceResponse<List<StudentScore>>
+				{
+					Data = null,
+					Message = "Student not found or not active.",
+					Success = false
+				};
+			}
+				try
+			{
+				var response = await _context.StudentScores
+					.Where(s => s.StudentId == studentId)
+					.Include(s => s.Test)
+					.ToListAsync();
+				return new ServiceResponse<List<StudentScore>>
+				{
+					Data = response,
+					Message = response.Any() ? "Scores retrieved successfully." : "No scores found for this student.",
+					Success = true
+				};
+			}
+			catch (Exception ex)
+			{
+				return new ServiceResponse<List<StudentScore>>
+				{
+					Data = null,
+					Message = $"An error occurred while retrieving scores: {ex.Message}",
+					Success = false
+				};
+			}
+
+		}
+
 		public async Task<TestDto> GetTestByIdAsync(int testId, int employeeId, string employeeRole)
 		{
 			var allowedRoles = new[] { "Admin", "Editor","Student" };
@@ -328,6 +409,8 @@ namespace MoysIQPlatform.Server.Services.TestService
 			{
 				await _context.SaveChangesAsync();
 
+				await CalculateAndStoreStudentScoreAsync(studentId, testId);
+
 				return new ServiceResponse<List<StudentAnswerDto>>
 				{
 					Data = studentAnswers,
@@ -345,6 +428,87 @@ namespace MoysIQPlatform.Server.Services.TestService
 				};
 			}
 		}
+
+		private async Task<ServiceResponse<StudentScore>> CalculateAndStoreStudentScoreAsync(int studentId, int testId)
+		{
+			var testQuestions = await _context.TestQuestions
+				.Where(tq => tq.TestId == testId)
+				.Include(tq => tq.Question)
+					.ThenInclude(q => q.Options)
+				.ToListAsync();
+
+			var studentAnswers = await _context.StudentAnswers
+				.Where(a => a.StudentId == studentId && a.TestId == testId)
+				.ToListAsync();
+
+			double totalScore = 0;
+			var snapshots = new List<StudentAnswerSnapshot>();
+
+			foreach (var tq in testQuestions)
+			{
+				var question = tq.Question;
+				var studentAnswer = studentAnswers.FirstOrDefault(a => a.QuestionId == question.Id);
+				if (studentAnswer == null)
+					continue;
+
+				var correctOption = question.Options.FirstOrDefault(o => o.IsCorrect);
+				bool isCorrect = false;
+
+				if (question.Type == "MCQ" && correctOption != null && studentAnswer.AnswerOptionId == correctOption.Id)
+				{
+					totalScore += question.Weight;
+					isCorrect = true;
+				}
+				else if (question.Type == "Text" && correctOption != null)
+				{
+					var correct = correctOption.Text?.Trim().ToLower();
+					var student = studentAnswer.WrittenAnswer?.Trim().ToLower();
+
+					if (!string.IsNullOrWhiteSpace(student) && student == correct)
+					{
+						totalScore += question.Weight;
+						isCorrect = true;
+					}
+				}
+
+				snapshots.Add(new StudentAnswerSnapshot
+				{
+					StudentId = studentId,
+					TestId = testId,
+					QuestionId = question.Id,
+					StudentAnswerText = studentAnswer.WrittenAnswer,
+					StudentAnswerOptionId = studentAnswer.AnswerOptionId,
+					CorrectAnswerTextAtSubmission = correctOption?.Text,
+					CorrectAnswerOptionIdAtSubmission = correctOption?.Id,
+					IsCorrect = isCorrect,
+					QuestionWeight = question.Weight,
+					SubmittedAt = DateTime.UtcNow
+				});
+			}
+
+			var studentScore = new StudentScore
+			{
+				StudentId = studentId,
+				TestId = testId,
+				Score = (int)Math.Round(totalScore),
+				Date = DateTime.UtcNow
+			};
+
+			_context.StudentScores.Add(studentScore);
+			_context.StudentAnswerSnapshots.AddRange(snapshots); // 🆕 Add answer snapshots
+			await _context.SaveChangesAsync();
+
+			Console.WriteLine($"Score for student {studentId} in test {testId}: {studentScore.Score}");
+
+			return new ServiceResponse<StudentScore>
+			{
+				Data = studentScore,
+				Message = "Score calculated and saved successfully.",
+				Success = true
+			};
+		}
+
+
 
 	}
 }
