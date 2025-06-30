@@ -141,7 +141,7 @@ protected override void OnInitialized()
         if (!state.IsAuthenticated || state.IsApproved == "false" || !state.Role.Contains("Student"))
             return;
 
-        studentId = 1; // استبدله بالـ real ID لاحقاً
+        studentId = int.Parse(state.UserId);
         await LoadTestAndQuestions();
     }
 
@@ -149,7 +149,7 @@ protected override void OnInitialized()
     {
         try
         {
-            await JS.InvokeVoidAsync("startTestTimer", 1);
+            await JS.InvokeVoidAsync("startTestTimer", 5);
             await JS.InvokeVoidAsync("registerTestInstance", dotNetRef);
 
 
