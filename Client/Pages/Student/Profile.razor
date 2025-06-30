@@ -1,97 +1,154 @@
 ﻿@page "/student-profile"
+
+@using Microsoft.AspNetCore.Components.Authorization
 @using MoysIQPlatform.Shared.Models.Questions
 @using MoysIQPlatform.Shared.Models.Tests
 @inject ITestService TestService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <div dir="rtl">
-<h3>📊 نتائج الطالب</h3>
 
-@if (scores == null)
-{
-    <p>⏳ جاري تحميل النتائج...</p>
-}
-else
-{
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>اسم الاختبار</th>
-                <th>التاريخ</th>
-                <th>الدرجة</th>
-                <th>التفاصيل</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var score in scores)
+    <AuthorizeView>
+        <Authorized>
+            <CurrentUserState OnStateReady="HandleUserState" />
+
+
+
+            @if (userState is not null && userState.IsAuthenticated)
             {
-                <tr>
-                    <td>@score.Test.Title</td>
-                    <td>@score.Date.ToString("yyyy/MM/dd")</td>
-                    <td>@score.Score</td>
-                    <td>
-                        <button class="btn btn-outline-info btn-sm" @onclick="@(() => ShowAnswers(score.TestId))">عرض</button>
-                    </td>
-                </tr>
+                <p class="text-muted">👤 Welcome, <strong>@userState.FullName</strong> (@userState.Role)</p>
             }
-        </tbody>
-    </table>
-}
-
-    @if (selectedAnswers != null)
-    {
-        <div class="mt-4 p-3 border">
-            <h5>📋 تفاصيل الأسئلة:</h5>
-
-            @if (!selectedAnswers.Any())
+            @if (userState is null)
             {
-                <p class="text-warning">🚫 لا توجد إجابات محفوظة لهذا الاختبار.</p>
+                <p><em>Loading user info...</em></p>
             }
+            else if (!string.IsNullOrWhiteSpace(userState.ErrorMessage))
+            {
+                <p class="text-danger">⚠️ @userState.ErrorMessage</p>
+            }
+            else if (userState.IsApproved.Contains("false") || !userState.HasRole("Student"))
+            {
+                <p class="text-warning">⛔ You are not authorized to access this page.</p>
+            }
+
             else
             {
-                @foreach (var answer in selectedAnswers)
-                {
-                    <div class="mb-3">
-                        <p><strong>السؤال:</strong> @answer.questions.Text</p>
 
-                        @if (answer.questions.Type == "Text")
+                <h3>📊 نتائج الطالب</h3>
+
+                @if (scores == null)
+                {
+                    <p>⏳ جاري تحميل النتائج...</p>
+                }
+                else
+                {
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>اسم الاختبار</th>
+                                <th>التاريخ</th>
+                                <th>الدرجة</th>
+                                <th>التفاصيل</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var score in scores)
+                            {
+                                <tr>
+                                    <td>@score.Test.Title</td>
+                                    <td>@score.Date.ToString("yyyy/MM/dd")</td>
+                                    <td>@score.Score</td>
+                                    <td>
+                                        <button class="btn btn-outline-info btn-sm" @onclick="@(() => ShowAnswers(score.TestId))">عرض</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+
+                @if (selectedAnswers != null)
+                {
+                    <div class="mt-4 p-3 border">
+                        <h5>📋 تفاصيل الأسئلة:</h5>
+
+                        @if (!selectedAnswers.Any())
                         {
-                            <p>
-                                <strong>إجابتك:</strong> <span class="@((answer.IsCorrect ? "text-success" : "text-danger"))">
-                                    @answer.StudentAnswerText (@(answer.IsCorrect ? "✅ صحيح" : "❌ خطأ"))
-                                </span>
-                            </p>
+                            <p class="text-warning">🚫 لا توجد إجابات محفوظة لهذا الاختبار.</p>
                         }
                         else
                         {
-                            <p>
-                                <strong>إجابتك:</strong> <span class="@((answer.IsCorrect ? "text-success" : "text-danger"))">
-                                    @GetOptionText(answer.questions, answer.StudentAnswerOptionId) (@(answer.IsCorrect ? "✅ صحيح" : "❌ خطأ"))
-                                </span>
-                            </p>
-                        }
+                            @foreach (var answer in selectedAnswers)
+                            {
+                                <div class="mb-3">
+                                    <p><strong>السؤال:</strong> @answer.questions.Text</p>
 
-                        <p><strong>الجواب الصحيح:</strong> @answer.CorrectAnswerTextAtSubmission</p>
-                        <p><strong>الوزن:</strong> @answer.QuestionWeight</p>
-                        <hr />
+                                    @if (answer.questions.Type == "Text")
+                                    {
+                                        <p>
+                                            <strong>إجابتك:</strong> <span class="@((answer.IsCorrect ? "text-success" : "text-danger"))">
+                                                @answer.StudentAnswerText (@(answer.IsCorrect ? "✅ صحيح" : "❌ خطأ"))
+                                            </span>
+                                        </p>
+                                    }
+                                    else
+                                    {
+                                        <p>
+                                            <strong>إجابتك:</strong> <span class="@((answer.IsCorrect ? "text-success" : "text-danger"))">
+                                                @GetOptionText(answer.questions, answer.StudentAnswerOptionId) (@(answer.IsCorrect ? "✅ صحيح" : "❌ خطأ"))
+                                            </span>
+                                        </p>
+                                    }
+
+                                    <p><strong>الجواب الصحيح:</strong> @answer.CorrectAnswerTextAtSubmission</p>
+                                    <p><strong>الوزن:</strong> @answer.QuestionWeight</p>
+                                    <hr />
+                                </div>
+                            }
+                        }
                     </div>
                 }
-            }
-        </div>
-    }
+}
+        </Authorized>
 
+        <NotAuthorized>
+            <div class="center-content">
+                <img class="fade-in-out" src="/logo250.png" alt="Menu Icon" />
+                <h4 style="font-family:Cairo">
+                    الرجاء تسجيل
+                    <a href="login">الدخول  <MudIcon Icon="@Icons.Material.Filled.Login" Color="Color.Info" Size="Size.Medium" /> </a>
+                    لغرض المحتوى
+                </h4>
+            </div>
+            <div dir="rtl">
+                <MudPaper Class="pa-4 mt-4" Elevation="2">
+                    <MudText Typo="Typo.h6">🧠 منصة MoysIQPlatform</MudText>
+                    <MudText Typo="Typo.body1" Class="mt-2">
+                        منصة إلكترونية تهدف إلى تنظيم اختبارات الذكاء وتحليل القدرات العقلية للطلبة ضمن بيئة آمنة وتفاعلية.
+                    </MudText>
+                    <MudText Typo="Typo.body1">
+                        يتم إنشاء الاختبارات من قبل موظفين معتمدين، ويُتاح للطلبة المعتمدين فقط الدخول والمشاركة.
+                    </MudText>
+                </MudPaper>
+            </div>
+        </NotAuthorized>
+    </AuthorizeView>
 </div>
 @code {
     List<StudentScore>? scores;
     List<StudentAnswerSnapshot>? selectedAnswers;
     int? selectedTestId = null;
+    private UserAuthState? userState;
 
-
-    protected override async Task OnInitializedAsync()
+    private async Task HandleUserState(UserAuthState state)
     {
+        userState = state;
         var res = await TestService.StudentScoreAsync();
         if (res?.Data != null)
             scores = res.Data;
+        StateHasChanged();
     }
+
 
     async Task ShowAnswers(int testId)
     {
