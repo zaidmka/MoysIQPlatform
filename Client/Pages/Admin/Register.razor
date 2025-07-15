@@ -4,82 +4,45 @@
 @inject IEmployeeService AuthService
 @inject NavigationManager Nav
 
-<MudPaper Class="pa-6 mx-auto mt-6" MaxWidth="500px" Elevation="4">
-    <h3 class="text-center mb-4">📝 Employee Registration</h3>
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh;" dir="rtl">
+    <MudPaper Class="pa-6 mt-4" MaxWidth="500px" Elevation="6" Style="width: 100%;">
+        <div class="text-center mb-4">
+            <img src="/logo250.png" alt="Logo" class="animated-logo" style="width: 100px;" />
+            <h4 class="mt-3">📝 تسجيل حساب موظف جديد</h4>
+            <p class="text-muted">يرجى ملء الحقول أدناه لإنشاء حسابك</p>
+        </div>
 
-    @if (!string.IsNullOrWhiteSpace(Message))
-    {
-        <MudAlert Severity="Severity.Info" Elevation="0">@Message</MudAlert>
-    }
+        @if (!string.IsNullOrWhiteSpace(Message))
+        {
+            <MudAlert Severity="Severity.Info" Elevation="0" Class="mb-3">@Message</MudAlert>
+        }
 
-    <EditForm Model="registerModel" OnValidSubmit="HandleRegister">
-        <DataAnnotationsValidator />
+        <EditForm Model="registerModel" OnValidSubmit="HandleRegister">
+            <DataAnnotationsValidator />
 
-        <MudTextField Label="Full Name"
-                      @bind-Value="registerModel.FullName"
-                      For="@(() => registerModel.FullName)"
-                      Required="true"
-                      Class="mb-3" />
+            <MudTextField Label="👤 الاسم الكامل" @bind-Value="registerModel.FullName" Required="true" Class="mb-2" />
+            <MudTextField Label="📧 البريد الإلكتروني" @bind-Value="registerModel.Email" InputType="InputType.Email" Required="true" Class="mb-2" />
+            <MudTextField Label="🔑 كلمة المرور" @bind-Value="registerModel.Password" InputType="InputType.Password" Required="true" Class="mb-2" />
+            <MudTextField Label="🔒 تأكيد كلمة المرور" @bind-Value="registerModel.ConfirmPassword" InputType="InputType.Password" Required="true" Class="mb-2" />
 
-        <MudTextField Label="Email"
-                      @bind-Value="registerModel.Email"
-                      For="@(() => registerModel.Email)"
-                      InputType="InputType.Email"
-                      Required="true"
-                      Class="mb-3" />
+            <MudTextField Label="🏢 القسم" @bind-Value="registerModel.Department" Class="mb-2" />
+            <MudTextField Label="📍 موقع العمل" @bind-Value="registerModel.WorkLocation" Class="mb-2" />
+            <MudTextField Label="📞 رقم الهاتف" @bind-Value="registerModel.PhoneNumber" Class="mb-2" />
+            <MudTextField Label="⚧️ الجنس" @bind-Value="registerModel.Gender" Class="mb-2" />
+            <MudTextField Label="🎖️ الدور الوظيفي" @bind-Value="registerModel.Role" Class="mb-3" />
 
-        <MudTextField Label="Password"
-                      @bind-Value="registerModel.Password"
-                      For="@(() => registerModel.Password)"
-                      InputType="InputType.Password"
-                      Required="true"
-                      Class="mb-3" />
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" FullWidth>
+                ➕ تسجيل الحساب
+            </MudButton>
+        </EditForm>
 
-        <MudTextField Label="Confirm Password"
-                      @bind-Value="registerModel.ConfirmPassword"
-                      For="@(() => registerModel.ConfirmPassword)"
-                      InputType="InputType.Password"
-                      Required="true"
-                      Class="mb-3" />
+        <div class="mt-4 text-center">
+            <span>هل لديك حساب بالفعل؟</span>
+            <MudLink Href="/admin/logine">تسجيل الدخول</MudLink>
+        </div>
+    </MudPaper>
+</div>
 
-        <MudTextField Label="Department"
-                      @bind-Value="registerModel.Department"
-                      For="@(() => registerModel.Department)"
-                      Class="mb-3" />
-
-        <MudTextField Label="Work Location"
-                      @bind-Value="registerModel.WorkLocation"
-                      For="@(() => registerModel.WorkLocation)"
-                      Class="mb-3" />
-
-        <MudTextField Label="Phone Number"
-                      @bind-Value="registerModel.PhoneNumber"
-                      For="@(() => registerModel.PhoneNumber)"
-                      Class="mb-3" />
-
-        <MudTextField Label="Gender"
-                      @bind-Value="registerModel.Gender"
-                      For="@(() => registerModel.Gender)"
-                      Class="mb-3" />
-
-        <MudTextField Label="Role"
-                      @bind-Value="registerModel.Role"
-                      For="@(() => registerModel.Role)"
-                      Class="mb-3" />
-
-        <MudButton ButtonType="ButtonType.Submit"
-                   Variant="Variant.Filled"
-                   Color="Color.Primary"
-                   FullWidth>
-            Register
-        </MudButton>
-    </EditForm>
-
-    <div class="mt-4 text-center">
-        <span>عندك حساب؟</span>
-        <MudLink Href="/admin/logine">سجل دخول</MudLink>
-    </div>
-</MudPaper>
 
 @code {
     private EmployeeRegister registerModel = new();
