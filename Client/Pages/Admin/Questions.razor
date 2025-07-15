@@ -5,190 +5,247 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
-<h3>Question Management</h3>
+<h3>📋 Question Management</h3>
 <AuthorizeView Context="auth">
     <Authorized>
-  <CurrentUserState OnStateReady="HandleUserState" />
-<p class="text-muted"><strong>@message</strong></p>
+        <CurrentUserState OnStateReady="HandleUserState" />
+        <p class="text-muted"><strong>@message</strong></p>
 
+        @if (userState is not null && userState.IsAuthenticated)
+        {
+            <p class="text-muted">👤 Welcome, <strong>@userState.FullName</strong> (@userState.Role)</p>
+        }
+        @if (userState is null)
+        {
+            <p><em>Loading user info...</em></p>
+        }
+        else if (!string.IsNullOrWhiteSpace(userState.ErrorMessage))
+        {
+            <p class="text-danger">⚠️ @userState.ErrorMessage</p>
+        }
+        else if (userState.IsApproved.Contains("false") || !userState.HasRole("Editor"))
+        {
+            <p class="text-warning">⛔ You are not authorized to access this page.</p>
+        }
+        else
+        {
+            <div class="card p-4 shadow-sm mb-4">
+                <h5>Add New Question</h5>
+                <EditForm Model="newQuestion" OnValidSubmit="AddQuestion">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
 
-@if (userState is not null && userState.IsAuthenticated)
-{
-	<p class="text-muted">👤 Welcome, <strong>@userState.FullName</strong> (@userState.Role)</p>
-}
-@if (userState is null)
-{
-	<p><em>Loading user info...</em></p>
-}
-else if (!string.IsNullOrWhiteSpace(userState.ErrorMessage))
-{
-	<p class="text-danger">⚠️ @userState.ErrorMessage</p>
-}
-else if (userState.IsApproved.Contains("false") || !userState.HasRole("Editor"))
-{
-	<p class="text-warning">⛔ You are not authorized to access this page.</p>
-}
+                    <InputText @bind-Value="newQuestion.Text" class="form-control mb-2" placeholder="Question Text" />
+                    <InputText @bind-Value="newQuestion.Type" class="form-control mb-2" placeholder="Type (MCQ/Text)" />
+                    <InputNumber @bind-Value="newQuestion.Weight" class="form-control mb-2" />
+                    <div class="form-check mb-2">
+                        <InputCheckbox @bind-Value="newQuestion.IsMandatory" class="form-check-input" />
+                        <label class="form-check-label">Mandatory</label>
+                    </div>
 
-else
-{
-	<h5>Add New Question</h5>
-	<EditForm Model="newQuestion" OnValidSubmit="AddQuestion">
-		<DataAnnotationsValidator />
-		<ValidationSummary />
+                    <label>🖼️ Upload Question Image:</label>
+                    <InputFile OnChange="HandleQuestionImageUpload" class="form-control mb-3" />
+                    @if (!string.IsNullOrEmpty(questionPreviewUrl))
+                        {
+                            <img src="@questionPreviewUrl" alt="Preview" class="img-thumbnail mb-2" width="150" />
+                        }
 
-		<InputText @bind-Value="newQuestion.Text" class="form-control mb-2" placeholder="Question Text" />
-		<InputText @bind-Value="newQuestion.Type" class="form-control mb-2" placeholder="Type (MCQ/Text)" />
-		<InputNumber @bind-Value="newQuestion.Weight" class="form-control mb-2" />
-		<InputCheckbox @bind-Value="newQuestion.IsMandatory" class="form-check-input" /> Mandatory
+                    <h6>Options:</h6>
+                    @foreach (var option in newQuestion.Options.ToList())
+                    {
+                        <div class="mb-2 d-flex gap-2 align-items-center">
+                            <InputText @bind-Value="option.Text" class="form-control" placeholder="Option Text" />
+                            <label class="form-check-label">
+                                <InputCheckbox @bind-Value="option.IsCorrect" class="form-check-input" />
+                                Is Correct
+                            </label>
+                    <InputFile OnChange="@((e) => HandleOptionImageUpload(e, option))" class="form-control form-control-sm w-auto" />
+                        @if (!string.IsNullOrEmpty(option.ImageBase64))
+                            {
+                                <img src="@option.ImageBase64" alt="Selected" width="70" class="img-thumbnail" />
+                            }   
+                        <button type="button" class="btn btn-sm btn-danger" @onclick="() => RemoveOption(option)">❌</button>
+                        </div>
+                    }
 
-		<h6>Options:</h6>
-		@foreach (var option in newQuestion.Options.ToList())
-		{
-			<div class="mb-2 d-flex gap-2 align-items-center">
-				<InputText @bind-Value="option.Text" class="form-control" placeholder="Option Text" />
-				<label class="form-check-label">
-					<InputCheckbox @bind-Value="option.IsCorrect" class="form-check-input" />
-					Is Correct
-				</label>
-				<button type="button" class="btn btn-sm btn-danger" @onclick="() => RemoveOption(option)">❌</button>
-			</div>
-		}
-		<button class="btn btn-sm btn-secondary" @onclick="AddOption" type="button">Add Option</button>
-		<br /><br />
-		<button type="submit" class="btn btn-primary">Save Question</button>
-	</EditForm>
+                    <button class="btn btn-sm btn-secondary" @onclick="AddOption" type="button">➕ Add Option</button>
+                    <br /><br />
+                    <button type="submit" class="btn btn-success">💾 Save Question</button>
+                </EditForm>
+            </div>
 
-	<hr />
+            <hr />
 
-	<h5>All Questions</h5>
-	@if (questions == null)
-	{
-		<p><em>Loading questions...</em></p>
-	}
-	else
-	{
-		<table class="table table-bordered mt-3">
-			<thead>
-				<tr>
-					<th>Text</th>
-					<th>Type</th>
-					<th>Weight</th>
-					<th>Created By</th>
-				</tr>
-			</thead>
-			<tbody>
-				@foreach (var q in questions)
-				{
-					<tr>
-						<td>@q.Text</td>
-						<td>@q.Type</td>
-						<td>@q.Weight</td>
-						<td>@q.CreatedBy</td>
-					</tr>
-				}
-			</tbody>
-		</table>
-	}
-}
- </Authorized>
+            <h5>📚 All Questions</h5>
+            @if (questions == null)
+            {
+                <p><em>Loading questions...</em></p>
+            }
+            else
+            {
+                <table class="table table-bordered mt-3">
+                    <thead>
+                        <tr>
+                            <th>Text</th>
+                            <th>Type</th>
+                            <th>Weight</th>
+                            <th>Created By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var q in questions)
+                        {
+                            <tr>
+                                <td>@q.Text</td>
+                                <td>@q.Type</td>
+                                <td>@q.Weight</td>
+                                <td>@q.CreatedBy</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        }
+    </Authorized>
     <NotAuthorized>
         <div class="center-content">
             <img class="fade-in-out" src="/logo250.png" alt="Menu Icon" />
             <h4 style="font-family:Cairo">
                 الرجاء تسجيل
-                <a href="login">الدخول  <MudIcon Icon="@Icons.Material.Filled.Login" Color="Color.Info" Size="Size.Medium" /> </a>
+                <a href="login">الدخول <MudIcon Icon="@Icons.Material.Filled.Login" Color="Color.Info" Size="Size.Medium" /></a>
                 لغرض المحتوى
             </h4>
         </div>
     </NotAuthorized>
 </AuthorizeView>
+
 @code {
-	private UserAuthState? userState;
-	private List<QuestionWithEmployeeDto>? questions;
+    private UserAuthState? userState;
+    private List<QuestionWithEmployeeDto>? questions;
     private string message = string.Empty;
+    private string? questionPreviewUrl;
 
-	protected override async Task OnInitializedAsync()
-	{
-		await LoadQuestions();
+    private QuestionCreateDto newQuestion = new()
+    {
+        Type = "MCQ",
+        IsMandatory = false,
+        Options = new List<AnswerOptionDto> { new() { Text = "", IsCorrect = false } }
+    };
 
-	}
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadQuestions();
+    }
 
+    private async void HandleUserState(UserAuthState state)
+    {
+        userState = state;
 
-	private QuestionCreateDto newQuestion = new()
-	{
-		Type = "MCQ",
-		IsMandatory = false,
-		Options = new List<AnswerOptionDto>
-		{
-			new() { Text = "", IsCorrect = false }
-		}
-	};
+        if (state.Role.Contains("Editor") && state.IsAuthenticated)
+        {
+            var result = await QuestionService.GetAllQuestions();
+            if (result.Success)
+                questions = result.Data;
+        }
 
-	private async void HandleUserState(UserAuthState state)
-	{
-		userState = state;
+        StateHasChanged();
+    }
 
-		if (state.Role.Contains("Editor") &&state.IsAuthenticated)
-		{
-			var result = await QuestionService.GetAllQuestions();
-			if (result.Success)
-				questions = result.Data;
-		}
+    private async Task AddQuestion()
+    {
+        if (newQuestion.Options.Any(o => string.IsNullOrWhiteSpace(o.Text)))
+        {
+            message = "❗ All options must have text.";
+            return;
+        }
 
-		StateHasChanged(); // Refresh UI after state is set
-	}
+        var correctCount = newQuestion.Options.Count(o => o.IsCorrect);
+        if (correctCount != 1)
+        {
+            message = "❗ Exactly one option must be marked as correct.";
+            return;
+        }
 
-	private async Task AddQuestion()
-	{
-		// Validate: all options must have text
-		if (newQuestion.Options.Any(o => string.IsNullOrWhiteSpace(o.Text)))
-		{
-			message = "❗ All options must have text.";
-			return;
-		}
+        var result = await QuestionService.CreateQuestion(newQuestion);
 
-		// Validate: only one correct option
-		var correctCount = newQuestion.Options.Count(o => o.IsCorrect);
-		if (correctCount != 1)
-		{
-			message = "❗ Exactly one option must be marked as correct.";
-			return;
-		}
+        if (result.Success)
+        {
+            await LoadQuestions();
+            newQuestion = new QuestionCreateDto
+            {
+                Type = "MCQ",
+                IsMandatory = false,
+                Options = new() { new AnswerOptionDto() }
+            };
+            message = "✅ Question saved successfully.";
+        }
+        else
+        {
+            message = $"❌ Failed to save: {result.Message}";
+        }
+    }
 
-		// Call the service to save
-		var result = await QuestionService.CreateQuestion(newQuestion);
+    private void RemoveOption(AnswerOptionDto option)
+    {
+        if (newQuestion.Options.Count > 1)
+            newQuestion.Options.Remove(option);
+    }
 
-		if (result.Success)
-		{
-			await LoadQuestions();
-			newQuestion = new QuestionCreateDto
-			{
-				Type = "MCQ",
-				IsMandatory = false,
-				Options = new() { new AnswerOptionDto() }
-			};
-			message = "✅ Question saved successfully.";
-		}
-		else
-		{
-			message = $"❌ Failed to save: {result.Message}";
-		}
-	}
+    private async Task LoadQuestions()
+    {
+        var result = await QuestionService.GetAllQuestions();
+        if (result.Success)
+            questions = result.Data;
+    }
 
-	private void RemoveOption(AnswerOptionDto option)
-	{
-		if (newQuestion.Options.Count > 1)
-			newQuestion.Options.Remove(option);
-	}
-	private async Task LoadQuestions()
-	{
-		var result = await QuestionService.GetAllQuestions();
-		if (result.Success)
-			questions = result.Data;
-	}
+    private void AddOption()
+    {
+        newQuestion.Options.Add(new AnswerOptionDto());
+    }
 
-	private void AddOption()
-	{
-		newQuestion.Options.Add(new AnswerOptionDto());
-	}
+private async Task HandleQuestionImageUpload(InputFileChangeEventArgs e)
+{
+    var file = e.File;
+
+    if (file.ContentType != "image/jpeg")
+    {
+        message = "❌ Only JPG images are allowed.";
+        return;
+    }
+
+    if (file.Size > 50 * 1024)
+    {
+        message = "❌ Image size must not exceed 50KB.";
+        return;
+    }
+
+    var buffer = new byte[file.Size];
+    await file.OpenReadStream().ReadAsync(buffer);
+
+    newQuestion.ImageBase64 = $"data:{file.ContentType};base64,{Convert.ToBase64String(buffer)}";
+    questionPreviewUrl = newQuestion.ImageBase64;
+}
+
+   private async Task HandleOptionImageUpload(InputFileChangeEventArgs e, AnswerOptionDto option)
+{
+    var file = e.File;
+
+    if (file.ContentType != "image/jpeg")
+    {
+        message = "❌ Only JPG images are allowed for options.";
+        return;
+    }
+
+    if (file.Size > 50 * 1024)
+    {
+        message = "❌ Option image must not exceed 50KB.";
+        return;
+    }
+
+    var buffer = new byte[file.Size];
+    await file.OpenReadStream().ReadAsync(buffer);
+
+    option.ImageBase64 = $"data:{file.ContentType};base64,{Convert.ToBase64String(buffer)}";
+}
+
 }

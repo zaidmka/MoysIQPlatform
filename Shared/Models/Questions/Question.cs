@@ -15,6 +15,8 @@ public class Question
 	public DateTime CreatedDate { get; set; }
 
 	public int CreatedByEmployeeId { get; set; }
+	public string? ImageUrl { get; set; } // if the question has an image
+
 
 	public Employee Employee { get; set; } = default!;
 

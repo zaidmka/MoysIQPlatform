@@ -14,6 +14,11 @@ using MoysIQPlatform.Server.Data;
 using MoysIQPlatform.Server.Services.TestService;
 using Swashbuckle.AspNetCore.Filters;
 using System.Text;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
+using dotenv.net;
+
+
 
 // ✅ Enable legacy encoding support (for older PDFs, etc.)
 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -106,6 +111,18 @@ builder.Services.AddSwaggerGen(options =>
 	});
 });
 
+
+//✅ Cloudinary Configuration
+	DotEnv.Load(options: new DotEnvOptions(probeForEnv: true));
+Cloudinary cloudinary = new Cloudinary(Environment.GetEnvironmentVariable("CLOUDINARY_URL"));
+cloudinary.Api.Secure = true;
+
+builder.Services.AddSingleton(new Cloudinary(Environment.GetEnvironmentVariable("CLOUDINARY_URL"))
+{
+	Api = { Secure = true }
+});
+
+
 // ✅ UI & Compression
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
@@ -124,7 +141,7 @@ app.Use(async (context, next) =>
 	context.Response.Headers["X-Frame-Options"] = "DENY";
 	context.Response.Headers["Referrer-Policy"] = "no-referrer";
 	context.Response.Headers["Content-Security-Policy"] =
-		"default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'";
+	"default-src 'self'; img-src 'self' data: blob: https://res.cloudinary.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'";
 	await next();
 });
 
@@ -134,15 +151,15 @@ if (app.Environment.IsDevelopment())
 	app.UseWebAssemblyDebugging();
 	app.UseSwagger();
 	app.UseSwaggerUI();
-	app.UseDeveloperExceptionPage(); // ✅ خطأ داخلي يظهر بوضوح فقط وقت التطوير
+	app.UseDeveloperExceptionPage(); // ✅ active in Development
+									 // ❌ Don't use this in Production! Use app.UseExceptionHandler("/error") instead
+									 // to handle exceptions gracefully.
 }
 else
 {
-	app.UseSwagger();       // ✅ تفعيل Swagger حتى بـ Production (لو تريدها)
-	app.UseSwaggerUI();     // ✅ نفس الشي
-	app.UseDeveloperExceptionPage(); // ❌ بس مؤقتاً للديبَغ!
-									 // الأفضل لاحقاً تستبدله بـ:
-									 // app.UseExceptionHandler("/error");
+	app.UseSwagger();       // ✅ Swagger is still available in Production
+	app.UseSwaggerUI();     // ✅ Swagger UI is still available in Production
+	app.UseDeveloperExceptionPage(); // ❌ Don't use this in Production! Use app.UseExceptionHandler("/error") instead
 }
 
 

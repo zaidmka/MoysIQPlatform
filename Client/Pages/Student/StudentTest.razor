@@ -65,7 +65,10 @@
 
         <div class="card mb-3 p-3 shadow-sm">
             <h5>❓ <strong>@q.QuestionText</strong></h5>
-
+            @if (!string.IsNullOrEmpty(q.ImageUrl))
+            {
+                <img src="@q.ImageUrl" alt="صورة السؤال" class="img-thumbnail mb-2" style="max-width: 300px;" />
+            }
             @if (q.QuestionType == "MCQ")
             {
 <InputRadioGroup @bind-Value="answer.AnswerOptionId">
@@ -73,9 +76,9 @@
     {
         var isSelected = answer.AnswerOptionId == option.answerId;
 
-        <div class="form-check mt-2 d-flex align-items-center justify-content-between"
+                <div class="form-check mt-2 d-flex align-items-center justify-content-between"
              style="cursor: pointer; background-color:@(isSelected ? "#e6f9ed" : "white"); border: 1px solid #ddd; border-radius: 6px; padding: 10px; transition: background-color 0.2s ease-in-out;"
-            @onclick="@(() => OnOptionSelected(answer, option.answerId))"
+             @onclick="@(() => OnOptionSelected(answer, option.answerId))"
              onmouseover="this.style.backgroundColor='#f7f7f7';"
              onmouseout="this.style.backgroundColor='@(isSelected ? "#e6f9ed" : "white")';">
 
@@ -88,8 +91,14 @@
 
             <label class="form-check-label" style="flex: 1; font-weight: @(isSelected ? "bold" : "normal"); margin-right:30px;">
                 @option.answerText
+
+                @if (!string.IsNullOrEmpty(option.ImageUrl))
+                {
+                    <img src="@option.ImageUrl" alt="صورة الخيار" class="img-thumbnail mt-2 d-block" style="max-width: 200px;" />
+                }
             </label>
         </div>
+
     }
 </InputRadioGroup>
 

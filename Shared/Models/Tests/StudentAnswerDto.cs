@@ -11,6 +11,8 @@ namespace MoysIQPlatform.Shared.Models.Tests
 		public int StudentId { get; set; }
 		public int TestId { get; set; }
 		public int QuestionId { get; set; }
+		public string? ImageUrl { get; set; } // if the question has an image
+
 		public int? AnswerOptionId { get; set; }
 		public string? WrittenAnswer { get; set; }
 		public DateTime AnsweredAt { get; set; }

@@ -10,5 +10,7 @@ public class QuestionWithEmployeeDto
 	public DateTime CreatedDate { get; set; }
 
 	public string CreatedBy { get; set; } = string.Empty; // ← FullName أو Email
+
+	public string? ImageUrl { get; set; } // if the question has an image
 	public List<AnswerOption> Options { get; set; } = new();
 }

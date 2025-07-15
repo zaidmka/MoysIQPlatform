@@ -11,5 +11,7 @@ namespace MoysIQPlatform.Shared.Models.Questions
 		public int answerId { get; set; }
 		public int questionId { get; set; }
 		public string answerText { get; set; } = string.Empty;
+		public string? ImageUrl { get; set; } // if the answers has an image
+
 	}
 }

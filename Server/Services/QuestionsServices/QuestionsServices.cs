@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
+using Microsoft.EntityFrameworkCore;
 using MoysIQPlatform.Server.Data;
 using MoysIQPlatform.Shared.Models;
 using MoysIQPlatform.Shared.Models.Accounts;
@@ -11,11 +13,13 @@ namespace MoysIQPlatform.Server.Services.QuestionsServices
 	{
 		private readonly DataContext _context;
 		private readonly IHttpContextAccessor _httpContext;
+		private readonly Cloudinary _cloudinary;
 
-		public QuestionsServices(DataContext context, IHttpContextAccessor httpContext)
+		public QuestionsServices(DataContext context, IHttpContextAccessor httpContext, Cloudinary cloudinary)
 		{
 			_context = context;
 			_httpContext = httpContext;
+			_cloudinary = cloudinary;
 		}
 
 		public async Task<ServiceResponse<List<QuestionWithEmployeeDto>>> GetAllQuestions()
@@ -66,15 +70,23 @@ namespace MoysIQPlatform.Server.Services.QuestionsServices
 						Message = auth.ErrorMessage
 					};
 				}
+
 				// 🛡️ Check role explicitly
 				if (!auth.Role.Split(',').Select(r => r.Trim()).Contains("Editor") &&
-					!auth.Role.Split(',').Select(r => r.Trim()).Contains("Admin")) // optionally allow admins too
+					!auth.Role.Split(',').Select(r => r.Trim()).Contains("Admin"))
 				{
 					return new ServiceResponse<QuestionWithEmployeeDto>
 					{
 						Success = false,
 						Message = "You are not authorized to create questions."
 					};
+				}
+
+				// 📤 Upload question image if available
+				string? questionImageUrl = null;
+				if (!string.IsNullOrWhiteSpace(dto.ImageBase64))
+				{
+					questionImageUrl = await UploadBase64ImageAsync(dto.ImageBase64, "questions");
 				}
 
 				var question = new Question
@@ -84,15 +96,28 @@ namespace MoysIQPlatform.Server.Services.QuestionsServices
 					Weight = dto.Weight,
 					IsMandatory = dto.IsMandatory,
 					CreatedDate = dto.CreatedDate,
-					CreatedByEmployeeId = auth.UserId!.Value // ✅ from auth context
+					ImageUrl = questionImageUrl,
+					CreatedByEmployeeId = auth.UserId!.Value
 				};
 
-				question.Options = dto.Options.Select(o => new AnswerOption
+				question.Options = new List<AnswerOption>();
+
+				foreach (var optionDto in dto.Options)
 				{
-					Text = o.Text,
-					IsCorrect = o.IsCorrect,
-					Question = question
-				}).ToList();
+					string? optionImageUrl = null;
+					if (!string.IsNullOrWhiteSpace(optionDto.ImageBase64))
+					{
+						optionImageUrl = await UploadBase64ImageAsync(optionDto.ImageBase64, "answers");
+					}
+
+					question.Options.Add(new AnswerOption
+					{
+						Text = optionDto.Text,
+						IsCorrect = optionDto.IsCorrect,
+						ImageUrl = optionImageUrl,
+						Question = question
+					});
+				}
 
 				_context.Questions.Add(question);
 				await _context.SaveChangesAsync();
@@ -106,10 +131,12 @@ namespace MoysIQPlatform.Server.Services.QuestionsServices
 						Weight = question.Weight,
 						IsMandatory = question.IsMandatory,
 						CreatedDate = question.CreatedDate,
+						ImageUrl = question.ImageUrl,
 						Options = question.Options.Select(o => new AnswerOption
 						{
 							Text = o.Text,
-							IsCorrect = o.IsCorrect
+							IsCorrect = o.IsCorrect,
+							ImageUrl = o.ImageUrl
 						}).ToList()
 					},
 					Success = true,
@@ -223,6 +250,30 @@ namespace MoysIQPlatform.Server.Services.QuestionsServices
 				EmployeeEntity = employee
 			};
 		}
+
+		private async Task<string?> UploadBase64ImageAsync(string base64String, string folder)
+		{
+			try
+			{
+				var bytes = Convert.FromBase64String(base64String.Split(',').Last()); // handles data:image/...
+
+				await using var stream = new MemoryStream(bytes);
+
+				var uploadParams = new ImageUploadParams
+				{
+					File = new FileDescription("image.jpg", stream),
+					Folder = folder
+				};
+
+				var result = await _cloudinary.UploadAsync(uploadParams);
+				return result.SecureUrl.ToString();
+			}
+			catch
+			{
+				return null; // optionally log the failure
+			}
+		}
+
 
 	}
 }

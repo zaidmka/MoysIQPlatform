@@ -280,11 +280,14 @@ namespace MoysIQPlatform.Server.Services.TestService
 					Weight = tq.Question.Weight,
 					QuestionType = tq.Question.Type.ToString(), // Assuming Type is an enum in Question model
 					QuestionText = tq.Question.Text,
+					ImageUrl = tq.Question.ImageUrl, // Assuming ImageUrl is a property in Question model
 					Answers = tq.Question.Options.Select(o => new StudentAnswerOptionsDto
 					{
 						 answerId= o.Id,
 						answerText = o.Text,
 						questionId = tq.Question.Id,
+						ImageUrl = o.ImageUrl, // Assuming ImageUrl is a property in AnswerOption model
+
 					}).ToList()
 				});
 			}

@@ -36,3 +36,14 @@ window.startTestTimer = function (durationMinutes) {
 
     tryStartTimer();
 };
+
+window.previewImageFromInput = (inputId, imgId) => {
+    const input = document.getElementById(inputId);
+    const img = document.getElementById(imgId);
+    const file = input.files[0];
+
+    if (file) {
+        const url = URL.createObjectURL(file);
+        img.src = url;
+    }
+};
