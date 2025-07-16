@@ -19,10 +19,20 @@
 
 <body>
     <div id="app">
-        <img src="logo250.png" alt="Logo" class="loader-logo" />
+        <div class="loading-screen">
+            <img src="logo250.png" alt="Logo" class="loader-logo" />
 
-        <div class="loading-progress-text"></div>
+            <div class="loading-progress">
+                <svg>
+                    <circle r="40%" cx="50%" cy="50%" />
+                    <circle r="40%" cx="50%" cy="50%" />
+                </svg>
+                <div class="loading-progress-text"></div>
+            </div>
+        </div>
     </div>
+
+
     <div id="blazor-error-ui">
         An unhandled error has occurred.
         <a href="" class="reload">Reload</a>
