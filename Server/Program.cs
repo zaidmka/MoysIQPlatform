@@ -140,10 +140,17 @@ app.Use(async (context, next) =>
 	context.Response.Headers["X-Content-Type-Options"] = "nosniff";
 	context.Response.Headers["X-Frame-Options"] = "DENY";
 	context.Response.Headers["Referrer-Policy"] = "no-referrer";
+
 	context.Response.Headers["Content-Security-Policy"] =
-	"default-src 'self'; img-src 'self' data: blob: https://res.cloudinary.com; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'";
+		"default-src 'self'; " +
+		"img-src 'self' data: blob: https://res.cloudinary.com; " +
+		"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+		"font-src 'self' https://fonts.gstatic.com; " +
+		"script-src 'self' 'unsafe-inline' 'unsafe-eval'";
+
 	await next();
 });
+
 
 // ✅ Dev / Prod Middleware
 if (app.Environment.IsDevelopment())
